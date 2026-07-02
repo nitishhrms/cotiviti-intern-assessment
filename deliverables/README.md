@@ -11,7 +11,8 @@
 | Deliverable | File | Status |
 |---|---|---|
 | Written Report (2 pages + bibliography) | `Nitish_Kumar_Report.docx` | ✅ Done |
-| PowerPoint Presentation (8 slides) | `Nitish_Kumar_Presentation.pptx` | ✅ Done |
+| PowerPoint Presentation (10 slides) | `Nitish_Kumar_Presentation.pptx` | ✅ Done |
+| Demo video speaking script | `Nitish_Kumar_Demo_Script.docx` | ✅ Done (aid for recording) |
 | Proof of Concept (demo code) | Root of this repo (`app.py`, `backend/`, `src/`) | ✅ Done |
 | Video Recording (MP4) | `Nitish_Kumar_Demo.mp4` | ⏳ **You record this** |
 
