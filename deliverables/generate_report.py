@@ -117,7 +117,7 @@ tr.font.color.rgb = PURPLE
 tr.font.name = FONT
 
 sub = doc.add_paragraph()
-sr = sub.add_run("Past, Present, & Future Approaches — NLP, OCR, Computer Vision, LLMs & LMMs")
+sr = sub.add_run("Past, Present, and Future Approaches: NLP, OCR, Computer Vision, LLMs & LMMs")
 sr.font.size = Pt(12)
 sr.font.italic = True
 sr.font.color.rgb = MAGENTA
@@ -133,9 +133,9 @@ meta.paragraph_format.space_after = Pt(8)
 heading(doc, "Defining the Concept")
 body(doc,
      "Clinical Natural Language Technology refers to the family of computational methods that convert "
-     "unstructured clinical information—physician notes, discharge summaries, scanned faxes, and medical "
-     "images—into structured, machine-actionable data. An estimated 80% of health data is unstructured, "
-     "trapped in free text and imaging where it cannot be directly queried, coded, or audited. The discipline "
+     "unstructured clinical information (physician notes, discharge summaries, scanned faxes, and medical "
+     "images) into structured data that computers can use. An estimated 80% of health data is unstructured, "
+     "trapped in free text and imaging where it cannot be directly searched, coded, or audited. The discipline "
      "spans four complementary technologies: Natural Language Processing (NLP) for extracting entities and "
      "relations from text; Optical Character Recognition (OCR) for digitizing scanned and faxed documents; "
      "Computer Vision (CV) for interpreting medical images; and, most recently, Large Language Models (LLMs) "
@@ -145,22 +145,22 @@ body(doc,
 
 heading(doc, "Trends: Past, Present, and Future")
 body(doc,
-     "The field has moved through three eras. The past (2000–2017) was dominated by rule-based and "
+     "The field has moved through three eras. The past (2000 to 2017) was dominated by rule-based and "
      "dictionary systems such as cTAKES and MetaMap that mapped text to ontologies (UMLS, SNOMED CT, ICD) "
-     "using hand-crafted patterns—accurate but brittle and expensive to maintain. The present (2018–"
-     "2023) is defined by transformer-based transfer learning: domain-pretrained encoders such as BioBERT, "
+     "using hand-written rules. These were accurate but brittle and expensive to maintain. The present "
+     "(2018 to 2023) is defined by transformer-based transfer learning: domain-pretrained encoders such as BioBERT, "
      "ClinicalBERT, and GatorTron dramatically improved named-entity recognition, de-identification, and "
      "phenotyping, while vision models like DenseNet and Vision Transformers reached expert-level performance "
      "on chest-radiograph classification. The emerging future (2024 onward) is generative and multimodal: "
      "clinical LLMs (Med-PaLM 2, GPT-class models) encode broad medical knowledge, and LMMs fuse image and "
      "text so a single model can read an X-ray and draft a narrative report. Retrieval-Augmented Generation "
      "(RAG) has become the dominant pattern for grounding these models in verified clinical sources and "
-     "controlling hallucination—a prerequisite for regulated healthcare use.")
+     "controlling hallucination (made-up facts), which is a prerequisite for regulated healthcare use.")
 
 heading(doc, "Opportunities")
 bullet(doc, "Automated coding & payment integrity: ",
        "extracting diagnoses, procedures, and supporting evidence from notes to detect miscoding, "
-       "upcoding, and documentation gaps at scale—directly aligned with Cotiviti's core business.")
+       "upcoding, and documentation gaps at scale, directly aligned with Cotiviti's core business.")
 bullet(doc, "Multimodal report generation: ",
        "vision-language models draft radiology and pathology reports, cutting turnaround time and "
        "surfacing findings that support or contradict billed claims.")
@@ -184,7 +184,7 @@ body(doc,
      "First, invest in a grounded clinical-NLP layer built on RAG: pair domain-pretrained encoders "
      "(ClinicalBERT/GatorTron) with a governed vector store of coding policies and clinical guidelines so every "
      "AI-generated code or flag is traceable to an authoritative source. Second, pilot multimodal document "
-     "understanding—combining OCR, NLP, and computer vision—to reconcile imaging and note evidence "
+     "understanding (combining OCR, NLP, and computer vision) to reconcile imaging and note evidence "
      "against submitted claims. Third, adopt a human-in-the-loop MLOps discipline (versioning, calibration, "
      "drift monitoring, and confidence-gated escalation) so automation augments rather than replaces expert "
      "reviewers. These positions let Cotiviti capture efficiency gains while meeting the accuracy, "
@@ -194,7 +194,7 @@ heading(doc, "Proof of Concept")
 body(doc,
      "The accompanying prototype, an automated Chest X-Ray Report Generation System, demonstrates these "
      "principles end to end. A DenseNet-121 vision encoder converts an X-ray (JPEG, PNG, or DICOM) into a "
-     "feature vector that a Transformer decoder turns into a narrative radiology report—illustrating the "
+     "feature vector that a Transformer decoder turns into a narrative radiology report, illustrating the "
      "Computer Vision and NLP pipeline. A RAG clinical agent (ClinicalBERT embeddings + ChromaDB vector store "
      "+ a LangChain ReAct loop) then answers clinical questions with a step-by-step reasoning trace grounded in "
      "retrieved cases, showing how LLM/LMM techniques can be made auditable. The system is wrapped in a "
@@ -260,6 +260,106 @@ for ref in refs:
         run.font.size = Pt(10)
 
 import os
+
+# ---- Page 4: Appendix A — System Architecture (HLD) ------------------------
+doc.add_page_break()
+heading(doc, "Appendix A: System Architecture (High-Level Design)")
+body(doc,
+     "The proof of concept is organized in four layers. Client interfaces (a Gradio UI, Swagger, and REST "
+     "clients) call a FastAPI service, which routes requests to the model, DICOM, RAG, and async services; "
+     "these read from the vector store, model weights, and vocabulary.")
+
+_hld = os.path.join(os.path.dirname(__file__), "hld_architecture.png")
+if os.path.exists(_hld):
+    pic_p = doc.add_paragraph()
+    pic_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    pic_p.paragraph_format.space_before = Pt(2)
+    pic_p.paragraph_format.space_after = Pt(2)
+    pic_p.add_run().add_picture(_hld, width=Inches(6.1))
+    cap = doc.add_paragraph()
+    cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    cr = cap.add_run("Figure 1. High-level design of the Chest X-Ray Report Generation System.")
+    cr.font.size = Pt(9)
+    cr.font.italic = True
+    cr.font.color.rgb = GREY
+
+# ---- Appendix B — API Reference --------------------------------------------
+heading(doc, "Appendix B: API Reference (Surface Level)")
+body(doc,
+     "The system exposes a REST API built with FastAPI; full interactive documentation is auto-generated "
+     "at /docs (Swagger). The core endpoints are summarized below.")
+
+api = [
+    ("SYSTEM", [
+        ("GET", "/health", "Liveness probe and model-loaded status"),
+        ("GET", "/metadata", "Model architecture details (vocab size, dimensions, dataset)"),
+        ("GET", "/metrics", "Prometheus metrics (request counts, latency histogram)"),
+    ]),
+    ("INFERENCE", [
+        ("POST", "/predict", "Generate a report from a JPEG or PNG image"),
+        ("POST", "/predict/dicom", "Generate a report from a DICOM file, with windowing"),
+        ("POST", "/preview/dicom", "Return a windowed DICOM preview image (JPEG)"),
+        ("GET", "/task/{task_id}", "Poll the status and result of an async job"),
+    ]),
+    ("AGENT", [
+        ("POST", "/agent/query", "Grounded clinical question answering (optional reasoning trace)"),
+        ("POST", "/agent/search", "Semantic search over indexed reports"),
+        ("POST", "/agent/index", "Add reports to the vector store"),
+        ("DELETE", "/agent/index", "Delete the vector store collection"),
+        ("GET", "/agent/stats", "Vector store statistics (backend and count)"),
+    ]),
+]
+
+table = doc.add_table(rows=0, cols=3)
+table.style = "Table Grid"
+table.autofit = False
+col_w = [Inches(0.9), Inches(2.15), Inches(3.65)]
+
+
+def _set_widths(row):
+    for cell, w in zip(row.cells, col_w):
+        cell.width = w
+
+
+def _fmt(cell, text, *, bold=False, color=DARK, size=9.5, mono=False, align=None):
+    cell.paragraphs[0].alignment = align
+    run = cell.paragraphs[0].add_run(text)
+    run.font.size = Pt(size)
+    run.font.bold = bold
+    run.font.color.rgb = color
+    run.font.name = "Consolas" if mono else FONT
+    cell.paragraphs[0].paragraph_format.space_after = Pt(1)
+    cell.paragraphs[0].paragraph_format.space_before = Pt(1)
+
+
+# header row
+hdr = table.add_row()
+_set_widths(hdr)
+for c, t in zip(hdr.cells, ("Method", "Endpoint", "Description")):
+    set_cell_background(c, "4B2E83")
+    _fmt(c, t, bold=True, color=RGBColor(0xFF, 0xFF, 0xFF))
+
+for group, rows in api:
+    grp = table.add_row()
+    _set_widths(grp)
+    gcell = grp.cells[0].merge(grp.cells[1]).merge(grp.cells[2])
+    set_cell_background(gcell, "EFE7FA")
+    _fmt(gcell, group, bold=True, color=PURPLE, size=9)
+    for method, ep, desc in rows:
+        r = table.add_row()
+        _set_widths(r)
+        _fmt(r.cells[0], method, bold=True, color=MAGENTA, size=9, mono=True)
+        _fmt(r.cells[1], ep, color=DARK, size=9, mono=True)
+        _fmt(r.cells[2], desc, color=DARK, size=9)
+
+note = doc.add_paragraph()
+nr = note.add_run("Interactive requests support both synchronous and asynchronous (Celery) modes; "
+                  "responses include the generated report, a confidence score, and processing time.")
+nr.font.size = Pt(9)
+nr.font.italic = True
+nr.font.color.rgb = GREY
+note.paragraph_format.space_before = Pt(6)
+
 out = os.path.join(os.path.dirname(__file__), "Nitish_Kumar_Report.docx")
 doc.save(out)
 print("Saved:", out)

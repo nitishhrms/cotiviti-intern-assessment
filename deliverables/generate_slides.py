@@ -293,11 +293,79 @@ card(s, Inches(6.9), Inches(4.5), Inches(6.0), Inches(2.15), "Production-Style S
      accent=TEAL, title_color=TEAL)
 
 # ============================================================================
-# SLIDE 7 — Demo / How it maps
+# SLIDE 7 — System Architecture (HLD)
+# ============================================================================
+import os
+_HLD = os.path.join(os.path.dirname(__file__), "hld_architecture.png")
+s = slide()
+content_header(s, "How It Works", "System Architecture (High-Level Design)")
+footer(s, 7)
+if os.path.exists(_HLD):
+    # size by height so it fits between header and footer, then center horizontally
+    pic_h = Inches(4.95)
+    pic_w = Emu(int(pic_h * 13.2 / 7.1))
+    left = Emu(int((SW - pic_w) / 2))
+    s.shapes.add_picture(_HLD, left, Inches(1.5), height=pic_h)
+tb, tf = textbox(s, Inches(0.6), Inches(6.65), Inches(12.1), Inches(0.35))
+para(tf, "Four layers: clients to FastAPI to services (model, DICOM, RAG, async) to data, "
+         "with observability and delivery across the whole stack.",
+     11, GREY, align=PP_ALIGN.CENTER, first=True)
+
+# ============================================================================
+# SLIDE 8 — API at a Glance
+# ============================================================================
+s = slide()
+content_header(s, "Interface", "The API at a Glance")
+footer(s, 8)
+tb, tf = textbox(s, Inches(0.6), Inches(1.5), Inches(12.1), Inches(0.6))
+para(tf, "A REST API built with FastAPI. Full interactive docs are auto-generated at /docs (Swagger).",
+     14, GREY, first=True)
+api_groups = [
+    ("SYSTEM", PURPLE, [
+        ("GET  /health", "liveness and model-loaded status"),
+        ("GET  /metadata", "model architecture details"),
+        ("GET  /metrics", "Prometheus metrics"),
+    ]),
+    ("INFERENCE", MAGENTA, [
+        ("POST /predict", "report from JPEG / PNG"),
+        ("POST /predict/dicom", "report from a DICOM file"),
+        ("POST /preview/dicom", "windowed DICOM preview image"),
+        ("GET  /task/{id}", "poll an async job"),
+    ]),
+    ("AGENT", TEAL, [
+        ("POST /agent/query", "grounded question answering"),
+        ("POST /agent/search", "semantic search over reports"),
+        ("POST /agent/index", "add reports to the vector store"),
+        ("GET  /agent/stats", "vector store statistics"),
+    ]),
+]
+x = Inches(0.6)
+cw = Inches(4.05)
+gap = Inches(0.13)
+for name, col, rows in api_groups:
+    hdr = rect(s, x, Inches(2.25), cw, Inches(0.55), col)
+    tb, tf = textbox(s, x + Inches(0.2), Inches(2.28), cw - Inches(0.3), Inches(0.5),
+                     anchor=MSO_ANCHOR.MIDDLE)
+    para(tf, name, 13, WHITE, bold=True, first=True)
+    c = rect(s, x, Inches(2.8), cw, Inches(3.7), CARD)
+    c.line.color.rgb = RGBColor(0xE2, 0xDD, 0xEE)
+    c.line.width = Pt(1)
+    tb, tf = textbox(s, x + Inches(0.22), Inches(2.95), cw - Inches(0.4), Inches(3.5))
+    first = True
+    for ep, desc in rows:
+        p = tf.paragraphs[0] if first else tf.add_paragraph()
+        first = False
+        p.space_after = Pt(9)
+        r = p.add_run(); set_run(r, ep, 11.5, col, bold=True, font="Consolas")
+        r2 = p.add_run(); set_run(r2, "\n" + desc, 10.5, DARK)
+    x = Emu(int(x) + int(cw) + int(gap))
+
+# ============================================================================
+# SLIDE 9 — Demo / How it maps
 # ============================================================================
 s = slide()
 content_header(s, "Live Demo", "What You'll See in the Screenshare")
-footer(s, 7)
+footer(s, 9)
 demo = [
     ("Report Generation", "Upload an X-ray and get a generated radiology report", MAGENTA),
     ("Clinical Agent", "Ask a clinical question, see the step-by-step reasoning and a grounded answer", PURPLE),
