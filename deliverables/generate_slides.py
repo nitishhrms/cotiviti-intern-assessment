@@ -149,15 +149,15 @@ s = slide()
 content_header(s, "The Opportunity", "80% of Health Data Is Unstructured")
 footer(s, 2)
 tb, tf = textbox(s, Inches(0.6), Inches(1.6), Inches(12.1), Inches(1.1))
-para(tf, "Clinical value—diagnoses, procedures, and the evidence behind every claim—lives in free-text "
-         "notes, scanned faxes, and medical images that cannot be directly queried, coded, or audited.",
+para(tf, "The details that matter (diagnoses, procedures, and the proof behind every claim) sit in "
+         "free-text notes, scanned faxes, and images. Computers cannot search, code, or audit them directly.",
      15, GREY, first=True)
 
 data = [
-    ("Text", "Physician notes, discharge summaries, pathology narratives", MAGENTA),
-    ("Scanned", "Faxed orders & referrals digitized via OCR", PURPLE),
-    ("Images", "X-ray, CT & MRI read by computer vision", TEAL),
-    ("Codes", "The structured ICD / CPT output payment integrity needs", RGBColor(0xE0,0x7A,0x00)),
+    ("Text", "Physician notes, discharge summaries, pathology reports", MAGENTA),
+    ("Scanned", "Faxed orders and referrals digitized with OCR", PURPLE),
+    ("Images", "X-ray, CT and MRI read by computer vision", TEAL),
+    ("Codes", "The clean ICD / CPT codes payment integrity needs", RGBColor(0xE0,0x7A,0x00)),
 ]
 x = Inches(0.6)
 cw = Inches(2.95)
@@ -167,8 +167,8 @@ for title, txt, col in data:
     x = Emu(int(x) + int(cw) + int(gap))
 
 tb, tf = textbox(s, Inches(0.6), Inches(5.9), Inches(12.1), Inches(0.9))
-para(tf, "Clinical NLP technology turns all four into machine-actionable data—the foundation of "
-         "coding accuracy, payment integrity, and quality measurement.", 13, PURPLE, bold=True, first=True)
+para(tf, "Clinical NLP turns all four into structured data. That is the foundation for accurate coding, "
+         "payment integrity, and quality measurement.", 13, PURPLE, bold=True, first=True)
 
 # ============================================================================
 # SLIDE 3 — Trends / Evolution
@@ -177,18 +177,18 @@ s = slide()
 content_header(s, "Trends", "Past → Present → Future")
 footer(s, 3)
 eras = [
-    ("PAST", "2000–2017", "Rule-Based & Dictionary",
+    ("PAST", "2000-2017", "Rules and Word Lists",
      ["cTAKES, MetaMap map text to UMLS / SNOMED / ICD",
-      "Hand-crafted patterns & ontologies",
-      "Accurate but brittle and costly to maintain"], PURPLE),
-    ("PRESENT", "2018–2023", "Transformer Transfer Learning",
-     ["BioBERT, ClinicalBERT, GatorTron encoders",
-      "Expert-level image models: DenseNet, ViT",
-      "Strong NER, de-identification, phenotyping"], MAGENTA),
-    ("FUTURE", "2024 →", "Generative & Multimodal",
-     ["Clinical LLMs (Med-PaLM 2) & LMMs",
-      "One model reads an X-ray, drafts the report",
-      "RAG grounds output & controls hallucination"], TEAL),
+      "Hand-written rules and medical word lists",
+      "Accurate, but fragile and costly to update"], PURPLE),
+    ("PRESENT", "2018-2023", "Learning from Big Data",
+     ["BioBERT, ClinicalBERT, GatorTron models",
+      "Image models near expert level: DenseNet, ViT",
+      "Good at finding terms and hiding patient IDs"], MAGENTA),
+    ("FUTURE", "2024 on", "Generative and Multimodal",
+     ["Clinical LLMs (Med-PaLM 2) and LMMs",
+      "One model reads an X-ray and drafts the report",
+      "RAG keeps answers grounded, cuts made-up facts"], TEAL),
 ]
 x = Inches(0.6)
 cw = Inches(3.95)
@@ -215,16 +215,16 @@ s = slide()
 content_header(s, "Analysis", "Opportunities & Threats")
 footer(s, 4)
 card(s, Inches(0.6), Inches(1.7), Inches(6.0), Inches(4.9), "OPPORTUNITIES",
-     ["Automated coding & payment integrity — detect miscoding and documentation gaps at scale",
-      "Multimodal report generation — faster radiology / pathology turnaround",
-      "Grounded, auditable AI — RAG cites the exact source behind every extraction",
-      "Reviewer productivity — automation triages routine cases to focus experts"],
+     ["Automated coding: find miscoding and missing documentation at scale",
+      "Report drafting from images: faster radiology and pathology turnaround",
+      "Traceable AI: RAG shows the exact source behind every answer",
+      "More reviewer time: automation handles routine cases so experts focus on the hard ones"],
      accent=TEAL, title_color=TEAL)
-card(s, Inches(6.9), Inches(1.7), Inches(6.0), Inches(4.9), "THREATS & RISKS",
-     ["Hallucination — models can fabricate plausible but false clinical statements",
-      "Privacy & compliance — PHI demands HIPAA-grade de-identification & governance",
-      "Bias & drift — uneven performance and degradation as coding rules change",
-      "Regulation — evolving FDA & payer oversight of clinical AI"],
+card(s, Inches(6.9), Inches(1.7), Inches(6.0), Inches(4.9), "THREATS AND RISKS",
+     ["Made-up facts: models can state false things that sound convincing",
+      "Privacy: patient data needs HIPAA-grade handling and strict controls",
+      "Bias and drift: uneven results, and accuracy drops as coding rules change",
+      "Regulation: FDA and payer oversight of clinical AI keeps changing"],
      accent=MAGENTA, title_color=MAGENTA)
 
 # ============================================================================
@@ -235,14 +235,14 @@ content_header(s, "Strategy", "Recommended Actions for Cotiviti")
 footer(s, 5)
 recs = [
     ("01", "Grounded Clinical-NLP Layer",
-     "Pair domain-pretrained encoders (ClinicalBERT / GatorTron) with a governed RAG store of coding "
-     "policies & guidelines, so every AI-generated code is traceable to an authoritative source."),
+     "Combine medical language models (ClinicalBERT / GatorTron) with a trusted RAG library of coding "
+     "policies and guidelines, so every AI code links back to an official source."),
     ("02", "Multimodal Document Understanding",
-     "Combine OCR + NLP + computer vision to reconcile imaging and note evidence against submitted "
-     "claims—closing gaps single-modality review misses."),
-    ("03", "Human-in-the-Loop MLOps",
-     "Versioning, calibration, drift monitoring, and confidence-gated escalation so automation augments "
-     "expert reviewers and meets the compliance bar."),
+     "Use OCR, NLP, and computer vision together to check images and notes against submitted claims, "
+     "catching gaps that text-only review misses."),
+    ("03", "People in the Loop",
+     "Track model versions, watch for drift, and send low-confidence cases to a person, so automation "
+     "supports expert reviewers and stays compliant."),
 ]
 y = Inches(1.7)
 for num, title, txt in recs:
@@ -259,8 +259,8 @@ s = slide()
 content_header(s, "Proof of Concept", "Chest X-Ray Report Generation System")
 footer(s, 6)
 tb, tf = textbox(s, Inches(0.6), Inches(1.55), Inches(12.1), Inches(0.8))
-para(tf, "An end-to-end demonstrator: from a raw X-ray to a narrative report and a grounded, "
-         "auditable clinical Q&A agent.", 15, GREY, first=True)
+para(tf, "A full working demo: from a raw X-ray to a written report and a grounded clinical Q&A agent.",
+     15, GREY, first=True)
 
 # pipeline boxes
 steps = [
@@ -281,9 +281,9 @@ for title, sub, col in steps:
     para(tf, sub, 10.5, RGBColor(0xF0,0xEA,0xF8), align=PP_ALIGN.CENTER, space_after=0)
     x = Emu(int(x) + int(bw) + int(gap))
 
-card(s, Inches(0.6), Inches(4.5), Inches(6.0), Inches(2.15), "What It Demonstrates",
-     ["Computer Vision + NLP report generation",
-      "RAG makes LLM output grounded & auditable",
+card(s, Inches(0.6), Inches(4.5), Inches(6.0), Inches(2.15), "What It Shows",
+     ["Computer vision plus NLP writes the report",
+      "RAG keeps the AI's answers grounded and traceable",
       "DICOM windowing (lung / mediastinum / bone)"],
      accent=PURPLE, title_color=PURPLE)
 card(s, Inches(6.9), Inches(4.5), Inches(6.0), Inches(2.15), "Production-Style Stack",
@@ -299,10 +299,10 @@ s = slide()
 content_header(s, "Live Demo", "What You'll See in the Screenshare")
 footer(s, 7)
 demo = [
-    ("Report Generation", "Upload an X-ray → model returns a generated radiology report", MAGENTA),
-    ("Clinical Agent", "Ask \"What does cardiomegaly indicate?\" → ReAct trace + grounded answer", PURPLE),
-    ("Knowledge Base", "Add reports, run semantic search, manage the ChromaDB store", TEAL),
-    ("System & Telemetry", "Live health, Prometheus metrics, OpenTelemetry status", RGBColor(0xE0,0x7A,0x00)),
+    ("Report Generation", "Upload an X-ray and get a generated radiology report", MAGENTA),
+    ("Clinical Agent", "Ask a clinical question, see the step-by-step reasoning and a grounded answer", PURPLE),
+    ("Knowledge Base", "Add reports, search by meaning, and manage the vector store", TEAL),
+    ("System and Telemetry", "Live health, Prometheus metrics, OpenTelemetry status", RGBColor(0xE0,0x7A,0x00)),
 ]
 y = Inches(1.8)
 for title, txt, col in demo:
@@ -320,11 +320,11 @@ rect(s, 0, 0, SW, SH, PURPLE)
 rect(s, 0, Inches(5.2), SW, Inches(0.09), MAGENTA)
 tb, tf = textbox(s, Inches(0.9), Inches(1.6), Inches(11.5), Inches(3),)
 para(tf, "Key Takeaways", 34, WHITE, bold=True, first=True, space_after=18)
-para(tf, "Clinical NLP technology unlocks the 80% of health data trapped in text and images.",
+para(tf, "Clinical NLP unlocks the 80% of health data trapped in text and images.",
      18, RGBColor(0xE8,0xDE,0xF6), space_after=12)
-para(tf, "Grounded, multimodal, human-in-the-loop AI is the safe path for payment integrity.",
+para(tf, "Grounded, multimodal AI with people in the loop is the safe path for payment integrity.",
      18, RGBColor(0xE8,0xDE,0xF6), space_after=12)
-para(tf, "The POC proves the full pipeline end to end—model to deployable service.",
+para(tf, "The POC proves the full pipeline works, from model to deployable service.",
      18, RGBColor(0xE8,0xDE,0xF6), space_after=12)
 
 tb, tf = textbox(s, Inches(0.9), Inches(5.5), Inches(11), Inches(1.2))
