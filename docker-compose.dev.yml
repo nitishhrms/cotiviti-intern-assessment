@@ -1,0 +1,17 @@
+version: "3.9"
+
+# Development overrides — hot reload, local volume mounts, debug logging
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  api:
+    command: uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - .:/app   # mount entire repo for hot reload
+    environment:
+      - LOG_LEVEL=debug
+
+  worker:
+    command: celery -A backend.celery_app worker --loglevel=debug --concurrency=1
+    volumes:
+      - .:/app

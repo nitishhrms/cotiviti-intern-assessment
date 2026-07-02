@@ -1,0 +1,82 @@
+version: "3.9"
+
+services:
+  # ── Redis (Celery broker + result backend) ────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── FastAPI backend ───────────────────────────────────────────────────────
+  api:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - INFERENCE_WORKERS=2
+      - OTEL_ENABLED=${OTEL_ENABLED:-false}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
+      - VLLM_BASE_URL=${VLLM_BASE_URL:-}
+    volumes:
+      - model_artifacts:/app/xray_caption_models
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Celery worker ─────────────────────────────────────────────────────────
+  worker:
+    build: .
+    command: celery -A backend.celery_app worker --loglevel=info --concurrency=2
+    restart: unless-stopped
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - model_artifacts:/app/xray_caption_models
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  # ── MLflow tracking server ────────────────────────────────────────────────
+  mlflow:
+    image: python:3.11-slim
+    command: >
+      sh -c "pip install mlflow -q &&
+             mlflow server
+               --backend-store-uri sqlite:////mlflow/mlflow.db
+               --default-artifact-root /mlflow/artifacts
+               --host 0.0.0.0
+               --port 5000"
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - mlflow_data:/mlflow
+
+  # ── Gradio frontend ───────────────────────────────────────────────────────
+  frontend:
+    build: .
+    command: python app.py
+    restart: unless-stopped
+    ports:
+      - "7860:7860"
+    volumes:
+      - model_artifacts:/app/xray_caption_models
+    depends_on:
+      - api
+
+volumes:
+  model_artifacts:
+  mlflow_data:

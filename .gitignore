@@ -1,0 +1,52 @@
+# ── Model weights (large binaries — store via Git LFS or HuggingFace Hub) ──────
+xray_caption_models/*.pth
+xray_caption_models/*.onnx
+xray_caption_models/*.onnx.data
+xray_caption_models.zip
+
+# ── Vector store data (auto-rebuilt from corpus) ───────────────────────────────
+chroma_store/
+faiss_store/
+
+# ── Python ─────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ── Environments ───────────────────────────────────────────────────────────────
+.env
+.env.*
+venv/
+.venv/
+env/
+
+# ── Testing / coverage ─────────────────────────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ── IDE ────────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+
+# ── OS ─────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── MLflow runs ────────────────────────────────────────────────────────────────
+mlruns/
+mlartifacts/
+
+# ── Logs ───────────────────────────────────────────────────────────────────────
+*.log
+logs/
+
+# CI workflows omitted from submission repo (token lacks workflow scope)
+.github/workflows/

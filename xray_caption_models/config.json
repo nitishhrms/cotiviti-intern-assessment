@@ -1,0 +1,1 @@
+{"image_dir": ".", "csv_path": "iu_xray_reports.csv", "vocab_path": "vocab.json", "model_save_dir": "xray_caption_models", "embed_dim": 256, "num_heads": 8, "num_layers": 3, "dropout": 0.1, "max_len": 100, "batch_size": 16, "epochs": 20, "lr": 0.0001, "patience": 5}

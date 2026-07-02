@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+*.pyo
+.git/
+.github/
+mlruns/
+mlflow.db
+*.log
+.env
+.venv/
+venv/
+node_modules/
+docs/
+tests/
+*.md

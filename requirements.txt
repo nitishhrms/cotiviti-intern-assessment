@@ -1,0 +1,59 @@
+# ── Core model ────────────────────────────────────────────────────────────────
+torch
+torchvision
+Pillow
+numpy
+
+# ── Gradio frontend ───────────────────────────────────────────────────────────
+gradio
+
+# ── FastAPI backend (Phase 3) ─────────────────────────────────────────────────
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic
+
+# ── Async task queue (Phase 3) ────────────────────────────────────────────────
+celery[redis]
+redis
+
+# ── Rate limiting (Phase 3) ───────────────────────────────────────────────────
+slowapi
+
+# ── Metrics (Phase 3) ─────────────────────────────────────────────────────────
+prometheus-client
+
+# ── OpenTelemetry (Phase 3) ───────────────────────────────────────────────────
+opentelemetry-sdk
+opentelemetry-exporter-otlp
+opentelemetry-instrumentation-fastapi
+
+# ── MLflow experiment tracking (Phase 3) ──────────────────────────────────────
+mlflow
+
+# ── HuggingFace Hub (Phase 3) ─────────────────────────────────────────────────
+huggingface_hub
+transformers
+
+# ── RAG / Agent stack (Phase 7 inside Phase 3) ────────────────────────────────
+chromadb               # primary vector store (persistent, metadata filtering)
+faiss-cpu              # fallback vector store if chromadb not installed
+langchain
+langchain-community
+langchain-huggingface
+langchain-openai       # for vLLM OpenAI-compatible endpoint
+
+# ── DICOM support (Phase 5) ───────────────────────────────────────────────────
+pydicom
+pylibjpeg
+pylibjpeg-libjpeg
+
+# ── Testing ───────────────────────────────────────────────────────────────────
+pytest
+pytest-asyncio
+httpx
+
+# ── Utilities ─────────────────────────────────────────────────────────────────
+pandas
+opencv-python-headless
+scipy
