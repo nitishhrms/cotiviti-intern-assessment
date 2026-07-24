@@ -474,86 +474,135 @@ def _kb_count():
 DISCLAIMER = ("_Educational and research demo only. Not FDA-cleared and must not be used "
               "for clinical diagnosis or patient care._")
 
-with gr.Blocks(title="Chest X-Ray Report Generation + Clinical Agent",
-               theme=gr.themes.Soft(primary_hue="purple", secondary_hue="pink")) as demo:
+CSS = """
+.gradio-container {max-width: 1200px !important; margin: auto !important;}
+#report-box textarea, #trace-box textarea {
+    font-family: ui-monospace, "Cascadia Mono", Consolas, "Courier New", monospace !important;
+    font-size: 12.5px !important;
+    line-height: 1.55 !important;
+}
+#hero {text-align: center; padding: 4px 0 0;}
+#hero h1 {margin-bottom: 2px;}
+#hero p {color: #6b6b6b; margin-top: 0;}
+#statusbar {font-size: 13.5px; padding: 6px 12px; border-radius: 8px;
+            background: #f4f0fb; border: 1px solid #e3d9f5;}
+footer {visibility: hidden;}
+"""
+
+with gr.Blocks(title="Chest X-Ray Report Generation + Clinical Agent", css=CSS) as demo:
     gr.Markdown(
         "# 🩻 Chest X-Ray Report Generation + Clinical RAG Agent\n"
-        "DenseNet-121 + Transformer report generation, with a Retrieval-Augmented clinical "
-        "question-answering agent that shows its reasoning trace.\n\n" + DISCLAIMER
+        "<p>DenseNet-121 vision encoder → Transformer decoder → sectioned radiology report, "
+        "with a retrieval-augmented clinical agent that shows its reasoning.</p>",
+        elem_id="hero",
     )
+    gr.Markdown(DISCLAIMER)
 
     with gr.Tabs():
         # ---- Tab 1: Report Generation ----
         with gr.Tab("📄 Report Generation"):
-            gr.Markdown("Upload a chest X-ray. The vision encoder and Transformer decoder generate a draft report, "
-                        "which is then laid out in standard radiology-report sections.")
-            gr.Markdown(MODEL_STATUS)
-            with gr.Row():
-                with gr.Column():
-                    img_in = gr.Image(type="pil", label="Chest X-Ray (JPEG / PNG)")
-                    gen_btn = gr.Button("Generate report", variant="primary",
-                                        interactive=MODEL_OK)
-                with gr.Column():
-                    report_out = gr.Textbox(label="Structured Radiology Report", lines=18)
-                    raw_out = gr.Textbox(label="Raw model output (verbatim)", lines=2)
-                    pdf_out = gr.File(label="Download report (PDF)")
+            gr.Markdown(MODEL_STATUS, elem_id="statusbar")
+            gr.Markdown("Upload a chest X-ray, then click **Generate report**. "
+                        "The draft is laid out in standard radiology sections and "
+                        "offered as a downloadable PDF.")
+            with gr.Row(equal_height=False):
+                with gr.Column(scale=2):
+                    img_in = gr.Image(type="pil", label="Chest X-Ray (JPEG / PNG)",
+                                      height=300)
+                    with gr.Row():
+                        gen_btn = gr.Button("Generate report", variant="primary",
+                                            interactive=MODEL_OK, scale=3)
+                        clr_btn = gr.ClearButton(value="Clear", scale=1)
+                    pdf_out = gr.File(label="⬇  Download report (PDF)")
+                with gr.Column(scale=3):
+                    report_out = gr.Textbox(label="Structured Radiology Report", lines=21,
+                                            elem_id="report-box",
+                                            placeholder="The generated report will appear here.")
+                    with gr.Accordion("Raw model output (verbatim)", open=False):
+                        raw_out = gr.Textbox(show_label=False, lines=2,
+                                             container=False)
+            clr_btn.add([img_in, report_out, raw_out, pdf_out])
             gen_btn.click(predict_report, inputs=img_in,
                           outputs=[report_out, raw_out, pdf_out])
 
         # ---- Tab 2: Clinical Agent ----
         with gr.Tab("🤖 Clinical Agent"):
-            gr.Markdown("Ask a clinical question. The agent retrieves similar cases, explains the key finding, "
-                        "and answers, showing a ReAct-style reasoning trace.")
-            q_in = gr.Textbox(label="Clinical question", value="What does cardiomegaly indicate?")
-            k_in = gr.Slider(1, 5, value=3, step=1, label="Number of cases to retrieve (top-k)")
+            gr.Markdown("Ask a clinical question. The agent **retrieves similar cases first**, "
+                        "then grounds its answer in them and shows a ReAct-style trace.")
+            with gr.Row(equal_height=True):
+                q_in = gr.Textbox(label="Clinical question", lines=1, scale=4,
+                                  value="What does cardiomegaly indicate?")
+                k_in = gr.Slider(1, 5, value=3, step=1, scale=1,
+                                 label="Cases to retrieve (top-k)")
             ask_btn = gr.Button("Ask the agent", variant="primary")
-            ans_out = gr.Textbox(label="Answer", lines=4)
-            trace_out = gr.Textbox(label="Reasoning trace (ReAct)", lines=14)
+            ans_out = gr.Textbox(label="Answer", lines=5,
+                                 placeholder="The grounded answer will appear here.")
+            with gr.Accordion("🧠  Reasoning trace (ReAct)", open=False):
+                trace_out = gr.Textbox(show_label=False, lines=16, elem_id="trace-box",
+                                       container=False)
             backend_out = gr.Markdown()
-            ask_btn.click(agent_answer, inputs=[q_in, k_in], outputs=[ans_out, trace_out, backend_out])
+            ask_btn.click(agent_answer, inputs=[q_in, k_in],
+                          outputs=[ans_out, trace_out, backend_out])
             gr.Examples(
                 [["What does cardiomegaly indicate?"],
                  ["Explain bilateral pleural effusions"],
                  ["What is a pneumothorax and is it dangerous?"],
                  ["What causes pulmonary edema?"]],
-                inputs=[q_in],
+                inputs=[q_in], label="Example questions",
             )
 
         # ---- Tab 3: Knowledge Base ----
         with gr.Tab("🔎 Knowledge Base"):
-            gr.Markdown("Semantic search over the report corpus, and add your own reports (RAG index management).")
-            with gr.Row():
-                kq_in = gr.Textbox(label="Search query", value="fluid around the lung")
-                kk_in = gr.Slider(1, 5, value=3, step=1, label="Top-k")
+            gr.Markdown("Semantic search over the report corpus — this is the same "
+                        "retrieval step the Clinical Agent uses internally.")
+            with gr.Row(equal_height=True):
+                kq_in = gr.Textbox(label="Search query", lines=1, scale=4,
+                                   value="fluid around the lung")
+                kk_in = gr.Slider(1, 5, value=3, step=1, label="Top-k", scale=1)
             ksearch_btn = gr.Button("Search", variant="primary")
-            kb_table = gr.Dataframe(headers=["Score", "Finding", "Report"], label="Retrieved reports", wrap=True)
+            kb_table = gr.Dataframe(headers=["Score", "Finding", "Report"],
+                                    label="Retrieved reports", wrap=True)
             kb_backend = gr.Markdown()
-            ksearch_btn.click(kb_search, inputs=[kq_in, kk_in], outputs=[kb_table, kb_backend])
+            ksearch_btn.click(kb_search, inputs=[kq_in, kk_in],
+                              outputs=[kb_table, kb_backend])
 
-            gr.Markdown("### Add a report to the knowledge base")
-            with gr.Row():
-                add_text = gr.Textbox(label="Report text")
-                add_label = gr.Textbox(label="Finding label (optional)")
-            add_btn = gr.Button("Add report")
-            add_status = gr.Markdown()
-            kb_count = gr.Markdown(_kb_count())
-            add_btn.click(kb_add, inputs=[add_text, add_label], outputs=[add_status, kb_count])
+            with gr.Accordion("➕  Add a report to the knowledge base", open=False):
+                with gr.Row(equal_height=True):
+                    add_text = gr.Textbox(label="Report text", scale=3)
+                    add_label = gr.Textbox(label="Finding label (optional)", scale=1)
+                add_btn = gr.Button("Add report")
+                add_status = gr.Markdown()
+                kb_count = gr.Markdown(_kb_count())
+                add_btn.click(kb_add, inputs=[add_text, add_label],
+                              outputs=[add_status, kb_count])
 
         # ---- Tab 4: About ----
         with gr.Tab("ℹ️ About"):
             gr.Markdown(
                 "### How it works\n"
-                "- **Report generation:** a DenseNet-121 encoder turns the X-ray into a feature vector, "
-                "and a 3-layer Transformer decoder generates the report (trained on the Indiana University "
-                "Chest X-ray Collection).\n"
-                "- **Clinical agent (RAG):** the question is embedded with **ClinicalBERT**, similar reports "
-                "are retrieved by cosine similarity, the key finding is explained from a curated knowledge "
-                "base, and the answer is synthesized, grounded in the retrieved cases. A **ReAct** trace "
-                "shows every step.\n"
-                "- **Knowledge base:** semantic search and index management over the report corpus.\n\n"
-                "Full source, MLOps backend (FastAPI, Celery, Prometheus, Docker) and documentation: "
-                "[GitHub](https://github.com/nitishhrms/cotiviti-intern-assessment).\n\n" + DISCLAIMER
+                "**1 · Report generation** — a DenseNet-121 encoder turns the X-ray into a "
+                "feature vector; a 3-layer Transformer decoder generates the draft "
+                "(trained on the Indiana University Chest X-ray Collection). The output is "
+                "then laid out in `INDICATION` / `TECHNIQUE` / `FINDINGS` / `IMPRESSION` "
+                "sections, with a **provenance block** stating which text came from the model "
+                "and which came from a template or knowledge base.\n\n"
+                "**2 · Clinical agent (RAG)** — the question is embedded with **ClinicalBERT**, "
+                "similar reports are retrieved by cosine similarity, the key finding is "
+                "explained from a curated knowledge base, and the answer is grounded in the "
+                "retrieved cases. A **ReAct** trace shows every step.\n\n"
+                "**3 · Knowledge base** — semantic search and index management over the corpus.\n\n"
+                "---\n"
+                "#### Honest limitations\n"
+                "- The caption model is small (10.4M parameters, 9 training epochs), so it "
+                "produces one short line. The sectioning is done by post-processing, not by "
+                "the model.\n"
+                "- Report generation and the RAG agent are **independent paths**; retrieval "
+                "does not feed report generation.\n"
+                "- The vector index is held in memory and rebuilt on every restart.\n\n"
+                "Full source, MLOps backend (FastAPI, Celery, Prometheus, Docker) and docs: "
+                "[GitHub](https://github.com/nitishhrms/cotiviti-intern-assessment).\n\n"
+                + DISCLAIMER
             )
 
 if __name__ == "__main__":
-    demo.launch()
+    demo.launch(theme=gr.themes.Soft(primary_hue="purple", secondary_hue="pink"))
