@@ -7,6 +7,8 @@ Past, Present, & Future Approaches (NLP, OCR, Computer Vision, LLM, LMM).
 Author: Nitish Kumar - San Jose State University
 """
 
+import os
+
 from docx import Document
 from docx.shared import Pt, RGBColor, Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
@@ -87,6 +89,25 @@ def bullet(doc, bold_lead, rest):
     return p
 
 
+def figure(doc, filename, caption, width=6.0):
+    path = os.path.join(os.path.dirname(__file__), filename)
+    if not os.path.exists(path):
+        return
+    pic = doc.add_paragraph()
+    pic.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    pic.paragraph_format.space_before = Pt(4)
+    pic.paragraph_format.space_after = Pt(2)
+    pic.add_run().add_picture(path, width=Inches(width))
+    cap = doc.add_paragraph()
+    cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    cr = cap.add_run(caption)
+    cr.font.size = Pt(9)
+    cr.font.italic = True
+    cr.font.color.rgb = GREY
+    cap.paragraph_format.space_after = Pt(6)
+    return cap
+
+
 doc = Document()
 style_body(doc)
 
@@ -132,62 +153,74 @@ meta.paragraph_format.space_after = Pt(8)
 # ---- Body ------------------------------------------------------------------
 heading(doc, "Defining the Concept")
 body(doc,
-     "Clinical Natural Language Technology is a group of computer methods. They turn messy medical "
-     "information into clean, structured data. This information includes doctor notes, discharge "
-     "summaries, scanned faxes, and medical images. About 80% of health data is messy like this. It sits "
-     "in plain text and in pictures. Computers cannot search it, code it, or audit it directly. Four "
-     "technologies do the work. Natural Language Processing (NLP) reads text and pulls out facts. Optical "
-     "Character Recognition (OCR) turns scanned paper into digital text. Computer Vision (CV) reads "
-     "medical images. Large Language Models (LLMs) and Large Multimodal Models (LMMs) handle text and "
-     "images together. Together these methods turn written medical content into codes and evidence. "
-     "Payment integrity and quality teams depend on that output.")
+     "Clinical Natural Language Technology is a family of computational methods that convert unstructured "
+     "medical information, such as physician notes, discharge summaries, scanned faxes, and diagnostic "
+     "images, into clean, structured, machine-readable data. An estimated 80% of healthcare data is "
+     "unstructured, locked in free text and pictures that systems cannot directly search, code, or audit. "
+     "Five complementary technologies do this work. Natural Language Processing (NLP) extracts facts and "
+     "clinical entities from text. Optical Character Recognition (OCR) digitizes scanned and faxed "
+     "documents. Computer Vision (CV) interprets medical images. Large Language Models (LLMs) and Large "
+     "Multimodal Models (LMMs) reason over text and images together. Collectively, they translate "
+     "narrative medical content into the codes and supporting evidence that payment-integrity, "
+     "risk-adjustment, and quality teams rely on every day.")
 
 heading(doc, "Trends: Past, Present, and Future")
 body(doc,
-     "The field has gone through three stages. The first stage ran from 2000 to 2017. It used rules and "
-     "word lists. Tools like cTAKES and MetaMap matched text to standard code sets such as UMLS, SNOMED CT, "
-     "and ICD. They were accurate. But they broke easily, and they cost a lot to maintain. The second stage "
-     "ran from 2018 to 2023. Transformer models took over. Models trained on medical text, such as BioBERT, "
-     "ClinicalBERT, and GatorTron, worked much better. They improved entity recognition, de-identification, "
-     "and phenotyping. Vision models like DenseNet reached expert-level accuracy on chest X-rays. The third "
-     "stage started in 2024. It is generative and multimodal. Clinical LLMs such as Med-PaLM 2 hold broad "
-     "medical knowledge. LMMs read an image and text together. One model can now read an X-ray and write a "
-     "draft report. Retrieval-Augmented Generation (RAG) is the standard way to keep these models honest. "
-     "RAG grounds each answer in a trusted source. It limits hallucination, which means made-up facts. "
-     "Healthcare cannot use these models safely without that grounding.")
+     "The field has evolved through three overlapping eras, summarized in Figure 1. From roughly 2000 to "
+     "2017, rule-based systems such as cTAKES and MetaMap mapped text to standard terminologies including "
+     "UMLS, SNOMED CT, ICD, and LOINC. These systems were precise and transparent, but brittle and "
+     "expensive to maintain. From 2018 to 2023, transformer models trained on clinical text, such as "
+     "BioBERT, ClinicalBERT, and GatorTron, sharply improved entity recognition, de-identification, and "
+     "phenotyping, while vision models such as DenseNet reached radiologist-level performance on chest-film "
+     "findings (Rajpurkar et al., 2017). Since 2024, the frontier has become generative and multimodal. "
+     "Clinical LLMs such as Med-PaLM 2 encode broad medical knowledge, and LMMs interpret an image together "
+     "with its clinical context, so a single model can read an X-ray and draft a report. Retrieval-Augmented "
+     "Generation (RAG) has become the standard safeguard, grounding each answer in a trusted source to curb "
+     "hallucination (confident but false output). In regulated healthcare, that grounding is a prerequisite, "
+     "not an option.")
+
+figure(doc, "trends_timeline.png",
+       "Figure 1. Evolution of clinical natural language technology across three eras.",
+       width=6.4)
 
 heading(doc, "Opportunities")
 bullet(doc, "Automated coding and payment integrity: ",
-       "read notes and pull out diagnoses, procedures, and evidence. This finds miscoding, upcoding, and "
-       "missing documentation at scale. It matches Cotiviti's main business.")
-bullet(doc, "Multimodal report generation: ",
-       "models write draft radiology and pathology reports. This saves time. It also shows findings that "
-       "agree or disagree with a billed claim.")
+       "extract diagnoses, procedures, and supporting evidence from notes to surface miscoding, upcoding, "
+       "and documentation gaps at scale. This aligns directly with Cotiviti's prepay and postpay review and "
+       "risk-adjustment work.")
+bullet(doc, "Multimodal claim validation: ",
+       "draft radiology and pathology reports and compare imaging against notes and billed claims, "
+       "highlighting findings that support or contradict a submission.")
 bullet(doc, "Grounded and auditable AI: ",
-       "RAG shows the exact source text behind every result. This gives the audit trail that clinical and "
-       "regulatory review need.")
+       "Retrieval-Augmented Generation surfaces the exact source text behind every determination, producing "
+       "the audit trail that clinical and regulatory review require.")
 
 heading(doc, "Threats and Risks")
 bullet(doc, "Hallucination and safety: ",
-       "these models can state facts that sound right but are wrong. In payment and care decisions, that "
-       "is not acceptable.")
+       "models can produce confident but false statements, which is unacceptable in payment and care "
+       "decisions and must be controlled through grounding and human review.")
 bullet(doc, "Privacy and compliance: ",
-       "patient data in text and images needs strong de-identification. It also needs private hosting and "
-       "strict data rules.")
+       "protected health information in text and images demands rigorous de-identification, private "
+       "HIPAA-aligned hosting, and strict data governance.")
 bullet(doc, "Bias, drift, and regulation: ",
-       "models can work worse for some groups. They lose accuracy when coding rules change. Rules from the "
-       "FDA and from payers keep growing.")
+       "performance can vary across patient subgroups and degrade as coding rules change, all under "
+       "expanding FDA and payer oversight of clinical AI.")
 
 heading(doc, "Recommended Strategic Actions for Cotiviti")
 body(doc,
-     "First, build a clinical NLP layer on top of RAG. Use medical encoders such as ClinicalBERT or "
-     "GatorTron. Connect them to a managed store of coding policies and clinical guidelines. Every code or "
-     "flag the AI produces should point back to a named source. Second, run a pilot on multimodal "
-     "documents. Combine OCR, NLP, and computer vision. Use it to check imaging and notes against "
-     "submitted claims. Third, keep a human in the loop. Track versions. Check calibration. Watch for "
-     "drift. Send low-confidence cases to a person. Automation should help expert reviewers, not replace "
-     "them. These three steps give Cotiviti speed. They also meet the accuracy, clarity, and compliance "
-     "bar that payment integrity work needs.")
+     "Three actions, illustrated in Figure 2, would let Cotiviti capture these opportunities while managing "
+     "the risks. First, build a grounded clinical-NLP layer that pairs medical encoders such as ClinicalBERT "
+     "or GatorTron with a Retrieval-Augmented Generation index of coding policies and clinical guidelines, "
+     "so every code or flag the system produces links back to a named, auditable source. Second, pilot "
+     "multimodal document understanding that combines OCR, NLP, and computer vision to reconcile imaging and "
+     "notes against submitted claims, catching gaps that text-only review misses. Third, keep experts in the "
+     "loop by versioning models, monitoring calibration and drift, and routing low-confidence cases to human "
+     "reviewers, so automation augments rather than replaces them. Together, these steps give Cotiviti speed "
+     "while meeting the accuracy, transparency, and compliance bar that payment-integrity work demands.")
+
+figure(doc, "strategy_actions.png",
+       "Figure 2. Three recommended strategic actions for Cotiviti.",
+       width=6.4)
 
 heading(doc, "Proof of Concept")
 body(doc,
@@ -238,6 +271,9 @@ refs = [
     "Retrieval-augmented generation for knowledge-intensive NLP tasks. Advances in Neural Information "
     "Processing Systems, 33, 9459–9474.",
 
+    "Rajpurkar, P., Irvin, J., Zhu, K., Yang, B., Mehta, H., Duan, T., ... Ng, A. Y. (2017). CheXNet: "
+    "Radiologist-level pneumonia detection on chest X-rays with deep learning. arXiv:1711.05225.",
+
     "Singhal, K., Azizi, S., Tu, T., Mahdavi, S. S., Wei, J., Chung, H. W., ... Natarajan, V. (2023). "
     "Large language models encode clinical knowledge. Nature, 620, 172–180.",
 
@@ -280,7 +316,7 @@ if os.path.exists(_hld):
     pic_p.add_run().add_picture(_hld, width=Inches(6.1))
     cap = doc.add_paragraph()
     cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    cr = cap.add_run("Figure 1. High-level design of the Chest X-Ray Report Generation System.")
+    cr = cap.add_run("Figure 3. High-level design of the Chest X-Ray Report Generation System.")
     cr.font.size = Pt(9)
     cr.font.italic = True
     cr.font.color.rgb = GREY
