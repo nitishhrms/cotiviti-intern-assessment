@@ -306,65 +306,97 @@ if os.path.exists(_HLD):
     left = Emu(int((SW - pic_w) / 2))
     s.shapes.add_picture(_HLD, left, Inches(1.5), height=pic_h)
 tb, tf = textbox(s, Inches(0.6), Inches(6.65), Inches(12.1), Inches(0.35))
-para(tf, "Four layers: clients to FastAPI to services (model, DICOM, RAG, async) to data, "
-         "with observability and delivery across the whole stack.",
+para(tf, "Four layers: clients, then FastAPI, then the services (DICOM, model, formatter, "
+         "async, RAG), then data. Steps 1 to 4 are the report path. Steps 5 and 6 are the agent path.",
      11, GREY, align=PP_ALIGN.CENTER, first=True)
 
 # ============================================================================
-# SLIDE 8 — API at a Glance
+# SLIDE 8 — The Vision Model (DenseNet-121 + Transformer)
 # ============================================================================
 s = slide()
-content_header(s, "Interface", "The API at a Glance")
+content_header(s, "The Model", "DenseNet-121 Encoder and Transformer Decoder")
 footer(s, 8)
 tb, tf = textbox(s, Inches(0.6), Inches(1.5), Inches(12.1), Inches(0.6))
-para(tf, "A REST API built with FastAPI. Full interactive docs are auto-generated at /docs (Swagger).",
+para(tf, "The image becomes numbers. The numbers become words.",
      14, GREY, first=True)
-api_groups = [
-    ("SYSTEM", PURPLE, [
-        ("GET  /health", "liveness and model-loaded status"),
-        ("GET  /metadata", "model architecture details"),
-        ("GET  /metrics", "Prometheus metrics"),
-    ]),
-    ("INFERENCE", MAGENTA, [
-        ("POST /predict", "report from JPEG / PNG"),
-        ("POST /predict/dicom", "report from a DICOM file"),
-        ("POST /preview/dicom", "windowed DICOM preview image"),
-        ("GET  /task/{id}", "poll an async job"),
-    ]),
-    ("AGENT", TEAL, [
-        ("POST /agent/query", "grounded question answering"),
-        ("POST /agent/search", "semantic search over reports"),
-        ("POST /agent/index", "add reports to the vector store"),
-        ("GET  /agent/stats", "vector store statistics"),
-    ]),
+
+# tensor-shape pipeline
+shapes_row = [
+    ("X-Ray", "224 x 224 x 3", PURPLE),
+    ("DenseNet-121", "1024 features", MAGENTA),
+    ("Projection", "256 dimensions", PURPLE),
+    ("Transformer", "3 layers · 8 heads", TEAL),
+    ("Report Text", "1,606-word vocab", RGBColor(0xE0, 0x7A, 0x00)),
 ]
 x = Inches(0.6)
-cw = Inches(4.05)
-gap = Inches(0.13)
-for name, col, rows in api_groups:
-    hdr = rect(s, x, Inches(2.25), cw, Inches(0.55), col)
-    tb, tf = textbox(s, x + Inches(0.2), Inches(2.28), cw - Inches(0.3), Inches(0.5),
+bw = Inches(2.28)
+gap = Inches(0.14)
+for title, sub, col in shapes_row:
+    rect(s, x, Inches(2.25), bw, Inches(1.35), col)
+    tb, tf = textbox(s, x + Inches(0.12), Inches(2.33), bw - Inches(0.24), Inches(1.2),
                      anchor=MSO_ANCHOR.MIDDLE)
-    para(tf, name, 13, WHITE, bold=True, first=True)
-    c = rect(s, x, Inches(2.8), cw, Inches(3.7), CARD)
-    c.line.color.rgb = RGBColor(0xE2, 0xDD, 0xEE)
-    c.line.width = Pt(1)
-    tb, tf = textbox(s, x + Inches(0.22), Inches(2.95), cw - Inches(0.4), Inches(3.5))
-    first = True
-    for ep, desc in rows:
-        p = tf.paragraphs[0] if first else tf.add_paragraph()
-        first = False
-        p.space_after = Pt(9)
-        r = p.add_run(); set_run(r, ep, 11.5, col, bold=True, font="Consolas")
-        r2 = p.add_run(); set_run(r2, "\n" + desc, 10.5, DARK)
-    x = Emu(int(x) + int(cw) + int(gap))
+    para(tf, title, 13.5, WHITE, bold=True, align=PP_ALIGN.CENTER, first=True, space_after=4)
+    para(tf, sub, 10, RGBColor(0xF0, 0xEA, 0xF8), align=PP_ALIGN.CENTER, space_after=0)
+    x = Emu(int(x) + int(bw) + int(gap))
+
+card(s, Inches(0.6), Inches(3.95), Inches(6.0), Inches(2.35), "Why DenseNet-121",
+     ["Every layer feeds all later layers, so features get reused",
+      "Fewer parameters than a plain deep CNN of the same depth",
+      "Pretrained on ImageNet, so it converges fast on few X-rays",
+      "CheXNet showed this exact backbone matches radiologists"],
+     accent=MAGENTA, title_color=MAGENTA)
+card(s, Inches(6.9), Inches(3.95), Inches(6.0), Inches(2.35), "Honest Numbers",
+     ["10.4M parameters, trained for 9 epochs",
+      "Greedy decoding, one word at a time, until <end>",
+      "It writes one short line, so the app adds the sections",
+      "This proves the pipeline, not diagnostic accuracy"],
+     accent=PURPLE, title_color=PURPLE)
 
 # ============================================================================
-# SLIDE 9 — Demo / How it maps
+# SLIDE 9 — RAG Pipeline (ClinicalBERT + ChromaDB)
+# ============================================================================
+s = slide()
+content_header(s, "RAG Pipeline", "Grounding Answers in Retrieved Cases")
+footer(s, 9)
+tb, tf = textbox(s, Inches(0.6), Inches(1.5), Inches(12.1), Inches(0.6))
+para(tf, "Retrieval happens first. The answer is built from what was retrieved.",
+     14, GREY, first=True)
+
+rag_row = [
+    ("Question", "free text", PURPLE),
+    ("ClinicalBERT", "768-d embedding", TEAL),
+    ("Vector Store", "ChromaDB / FAISS", RGBColor(0x2F, 0x7D, 0x74)),
+    ("Cosine Top-k", "closest cases", MAGENTA),
+    ("Grounded Answer", "+ ReAct trace", RGBColor(0xE0, 0x7A, 0x00)),
+]
+x = Inches(0.6)
+for title, sub, col in rag_row:
+    rect(s, x, Inches(2.25), bw, Inches(1.35), col)
+    tb, tf = textbox(s, x + Inches(0.12), Inches(2.33), bw - Inches(0.24), Inches(1.2),
+                     anchor=MSO_ANCHOR.MIDDLE)
+    para(tf, title, 13.5, WHITE, bold=True, align=PP_ALIGN.CENTER, first=True, space_after=4)
+    para(tf, sub, 10, RGBColor(0xF0, 0xEA, 0xF8), align=PP_ALIGN.CENTER, space_after=0)
+    x = Emu(int(x) + int(bw) + int(gap))
+
+card(s, Inches(0.6), Inches(3.95), Inches(6.0), Inches(2.35), "Why This Matters",
+     ["The model cannot invent a case that is not in the store",
+      "Every answer quotes the reports it was built from",
+      "The ReAct trace shows each step, so a reviewer can check it",
+      "This is the audit trail that regulated healthcare needs"],
+     accent=TEAL, title_color=TEAL)
+card(s, Inches(6.9), Inches(3.95), Inches(6.0), Inches(2.35), "Where It Is Stored",
+     ["ChromaDB is the primary store, with cosine distance",
+      "FAISS is the local fallback when ChromaDB is not running",
+      "The public demo keeps the index in memory to fit free CPU",
+      "New reports can be added live from the Knowledge Base tab"],
+     accent=RGBColor(0x2F, 0x7D, 0x74), title_color=RGBColor(0x2F, 0x7D, 0x74))
+
+# ============================================================================
+# SLIDE 10 — Demo / How it maps
 # ============================================================================
 s = slide()
 content_header(s, "Live Demo", "What You'll See in the Screenshare")
-footer(s, 9)
+footer(s, 10)
 demo = [
     ("Report Generation", "Upload an X-ray and get a generated radiology report", MAGENTA),
     ("Clinical Agent", "Ask a clinical question, see the step-by-step reasoning and a grounded answer", PURPLE),
@@ -380,7 +412,7 @@ for title, txt, col in demo:
     y = Emu(int(y) + int(Inches(1.18)))
 
 # ============================================================================
-# SLIDE 8 — Closing
+# SLIDE 11 — Closing
 # ============================================================================
 s = slide()
 rect(s, 0, 0, SW, SH, PURPLE)

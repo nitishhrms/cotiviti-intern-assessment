@@ -116,20 +116,23 @@ box(68, 45.2, 24, 4.4, "agent", "/agent/query · /search · /index",
 
 # ---- Services --------------------------------------------------------------
 # Column order is chosen so that every arrow below runs without crossing another.
-box(14, 26.5, 17, 9.8, "Inference Engine",
-    "DenseNet-121 encoder\n→ Transformer decoder", fc=MAGENTA, fs=10.5, sfs=8)
-box(34.5, 26.5, 17, 9.8, "DICOM Loader",
-    "windowing:\nlung · mediastinum · bone", fc=PLUM, fs=10.5, sfs=8)
-box(55, 26.5, 17, 9.8, "Async Worker",
-    "Celery · results polled\nvia /task/{id}", fc=ORANGE, fs=10.5, sfs=8)
-box(75, 26.5, 17, 9.8, "RAG Agent",
-    "ClinicalBERT embeds\nLangChain ReAct + LLM", fc=TEAL, fs=10.5, sfs=8)
+box(14, 26.5, 15, 9.8, "DICOM Loader",
+    "windowing:\nlung · bone", fc=PLUM, fs=10, sfs=7.5)
+box(30.5, 26.5, 15, 9.8, "Inference Engine",
+    "DenseNet-121\n→ Transformer", fc=MAGENTA, fs=10, sfs=7.5)
+box(47, 26.5, 15, 9.8, "Report Formatter",
+    "sections +\nprovenance", fc="#A32C6D", fs=10, sfs=7.5)
+box(63.5, 26.5, 15, 9.8, "Async Worker",
+    "Celery ·\n/task/{id}", fc=ORANGE, fs=10, sfs=7.5)
+box(80, 26.5, 15, 9.8, "RAG Agent",
+    "ClinicalBERT +\ncosine + ReAct", fc=TEAL, fs=10, sfs=7.5)
 
 # ---- Data ------------------------------------------------------------------
-box(14, 10.3, 17, 6.0, "Model Weights", "HuggingFace Hub", fc=TEAL_D, fs=10.5)
-box(34.5, 10.3, 17, 6.0, "Vocabulary", "vocab.json", fc=TEAL_D, fs=10.5)
-box(55, 10.3, 17, 6.0, "Redis", "Celery broker + results", fc=TEAL_D, fs=10.5, sfs=8)
-box(75, 10.3, 17, 6.0, "Vector Store", "ChromaDB / FAISS", fc=TEAL_D, fs=10.5)
+box(14, 10.3, 15, 6.0, "Model Weights", "HF Hub", fc=TEAL_D, fs=10, sfs=8)
+box(30.5, 10.3, 15, 6.0, "Vocabulary", "vocab.json", fc=TEAL_D, fs=10, sfs=8)
+box(47, 10.3, 15, 6.0, "PDF Report", "downloadable", fc=TEAL_D, fs=10, sfs=8)
+box(63.5, 10.3, 15, 6.0, "Redis", "broker + results", fc=TEAL_D, fs=10, sfs=8)
+box(80, 10.3, 15, 6.0, "Vector Store", "ChromaDB / FAISS", fc=TEAL_D, fs=10, sfs=7.5)
 
 # ---- Arrows: clients -> API ------------------------------------------------
 for x in (26, 53, 80):
@@ -137,23 +140,26 @@ for x in (26, 53, 80):
 step(1, 26, 57.0)
 
 # ---- Arrows: API -> services -----------------------------------------------
-arrow(47, 45.2, 24.5, 36.8)              # inference -> Inference Engine
-arrow(52, 45.2, 43, 36.8)                # inference -> DICOM Loader
-arrow(58, 45.2, 62, 36.8, dashed=True)   # inference -> Async Worker (enqueue)
-arrow(80, 45.2, 83, 36.8)                # agent     -> RAG Agent
-step(2, 35.0, 41.2)
-step(4, 81.6, 41.2)
+arrow(49, 45.2, 22.5, 36.8)              # inference -> DICOM Loader
+arrow(53, 45.2, 38, 36.8)                # inference -> Inference Engine
+arrow(57, 45.2, 70, 36.8, dashed=True)   # inference -> Async Worker (enqueue)
+arrow(80, 45.2, 86, 36.8)                # agent     -> RAG Agent
+step(2, 47.5, 42.4)
+step(5, 83.4, 41.2)
 
-# DICOM Loader hands the windowed tensor to the Inference Engine
-arrow(34.5, 31.4, 31.3, 31.4)
+# Service-to-service hand-offs (adjacent boxes)
+arrow(29, 31.4, 30.2, 31.4)              # DICOM Loader -> Inference Engine
+arrow(45.5, 31.4, 46.7, 31.4)            # Inference Engine -> Report Formatter
+step(3, 46.1, 31.4)
 
 # ---- Arrows: services -> data ----------------------------------------------
-arrow(21, 26.5, 21, 16.6)                # engine -> model weights
-arrow(26, 26.5, 40, 16.6)                # engine -> vocabulary
-arrow(63.5, 26.5, 63.5, 16.6, dashed=True)   # worker    -> redis
-arrow(83.5, 26.5, 83.5, 16.6)            # RAG agent -> vector store
-step(3, 21, 21.6)
-step(5, 83.5, 21.6)
+arrow(34, 26.5, 23, 16.6)                # engine    -> model weights
+arrow(38, 26.5, 38, 16.6)                # engine    -> vocabulary
+arrow(54.5, 26.5, 54.5, 16.6)            # formatter -> PDF report
+arrow(71, 26.5, 71, 16.6, dashed=True)   # worker    -> redis
+arrow(87.5, 26.5, 87.5, 16.6)            # RAG agent -> vector store
+step(4, 54.5, 21.6)
+step(6, 87.5, 21.6)
 
 # ---- Cross-cutting footer --------------------------------------------------
 ax.add_patch(FancyBboxPatch((1, 1.4), 98, 5.4, boxstyle="round,pad=0.2,rounding_size=1.0",
