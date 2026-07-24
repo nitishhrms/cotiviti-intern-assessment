@@ -6,7 +6,6 @@ POC: Chest X-Ray Report Generation System.
 
 Author: Nitish Kumar - San Jose State University
 """
-
 from pptx import Presentation
 from pptx.util import Inches, Pt, Emu
 from pptx.dml.color import RGBColor

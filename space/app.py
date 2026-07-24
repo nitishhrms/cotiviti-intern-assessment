@@ -475,32 +475,171 @@ DISCLAIMER = ("_Educational and research demo only. Not FDA-cleared and must not
               "for clinical diagnosis or patient care._")
 
 CSS = """
-.gradio-container {max-width: 1200px !important; margin: auto !important;}
-#report-box textarea, #trace-box textarea {
-    font-family: ui-monospace, "Cascadia Mono", Consolas, "Courier New", monospace !important;
-    font-size: 12.5px !important;
-    line-height: 1.55 !important;
+/* ---------- Apple-inspired design system --------------------------------- */
+:root {
+  --ap-bg:        #fbfbfd;
+  --ap-surface:   #ffffff;
+  --ap-elevated:  rgba(255,255,255,0.72);
+  --ap-text:      #1d1d1f;
+  --ap-muted:     #6e6e73;
+  --ap-line:      rgba(0,0,0,0.08);
+  --ap-fill:      rgba(0,0,0,0.05);
+  --ap-accent:    #0071e3;
+  --ap-accent-hi: #0077ed;
+  --ap-radius:    18px;
 }
-#hero {text-align: center; padding: 4px 0 0;}
-#hero h1 {margin-bottom: 2px;}
-#hero p {color: #6b6b6b; margin-top: 0;}
-#statusbar {font-size: 13.5px; padding: 6px 12px; border-radius: 8px;
-            background: #f4f0fb; border: 1px solid #e3d9f5;}
-footer {visibility: hidden;}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ap-bg:       #000000;
+    --ap-surface:  #1c1c1e;
+    --ap-elevated: rgba(28,28,30,0.72);
+    --ap-text:     #f5f5f7;
+    --ap-muted:    #86868b;
+    --ap-line:     rgba(255,255,255,0.12);
+    --ap-fill:     rgba(255,255,255,0.09);
+  }
+}
+
+.gradio-container, .gradio-container * {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+               "Helvetica Neue", Inter, system-ui, sans-serif !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.gradio-container {
+  max-width: 1060px !important;
+  margin: auto !important;
+  background: var(--ap-bg) !important;
+  color: var(--ap-text) !important;
+  padding: 4px 20px 56px !important;
+}
+
+/* ---------- Hero --------------------------------------------------------- */
+#hero {text-align: center; padding: 44px 0 6px;}
+#hero h1 {
+  font-size: 44px !important; font-weight: 600 !important;
+  letter-spacing: -0.022em !important; line-height: 1.08 !important;
+  margin: 0 0 12px !important; color: var(--ap-text) !important;
+}
+#hero p {
+  font-size: 19px !important; line-height: 1.42 !important; font-weight: 400 !important;
+  color: var(--ap-muted) !important; max-width: 620px; margin: 0 auto !important;
+}
+#legal p {
+  font-size: 12px !important; color: var(--ap-muted) !important;
+  text-align: center !important; margin: 16px auto 26px !important;
+}
+
+/* ---------- Surfaces ----------------------------------------------------- */
+.block, .form {
+  background: var(--ap-surface) !important;
+  border: 1px solid var(--ap-line) !important;
+  border-radius: var(--ap-radius) !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03) !important;
+}
+
+/* ---------- Tabs --------------------------------------------------------- */
+.tab-nav, .tabs > .tab-nav {
+  border: none !important; gap: 4px !important;
+  justify-content: center !important; margin-bottom: 26px !important;
+}
+.tab-nav button {
+  border: none !important; background: transparent !important;
+  color: var(--ap-muted) !important; font-size: 14.5px !important;
+  font-weight: 500 !important; padding: 8px 18px !important;
+  border-radius: 980px !important; transition: all .2s ease !important;
+  letter-spacing: -0.01em !important;
+}
+.tab-nav button:hover  {color: var(--ap-text) !important;}
+.tab-nav button.selected {
+  background: var(--ap-fill) !important; color: var(--ap-text) !important;
+}
+
+/* ---------- Buttons ------------------------------------------------------ */
+button.primary {
+  background: var(--ap-accent) !important; color: #fff !important;
+  border: none !important; border-radius: 980px !important;
+  font-size: 15px !important; font-weight: 500 !important;
+  padding: 11px 22px !important; letter-spacing: -0.01em !important;
+  box-shadow: none !important;
+  transition: background .2s ease, transform .08s ease !important;
+}
+button.primary:hover  {background: var(--ap-accent-hi) !important;}
+button.primary:active {transform: scale(0.985) !important;}
+button.secondary {
+  background: var(--ap-fill) !important; color: var(--ap-text) !important;
+  border: none !important; border-radius: 980px !important;
+  font-size: 15px !important; font-weight: 500 !important; padding: 11px 20px !important;
+}
+button.primary:disabled {opacity: .4 !important;}
+
+/* ---------- Inputs ------------------------------------------------------- */
+input[type=text], textarea {
+  border-radius: 12px !important;
+  border: 1px solid var(--ap-line) !important;
+  background: var(--ap-surface) !important;
+  color: var(--ap-text) !important;
+  font-size: 14.5px !important;
+  transition: border-color .18s ease, box-shadow .18s ease !important;
+}
+input[type=text]:focus, textarea:focus {
+  border-color: var(--ap-accent) !important;
+  box-shadow: 0 0 0 3.5px rgba(0,113,227,0.16) !important;
+  outline: none !important;
+}
+label span {
+  font-size: 12.5px !important; font-weight: 500 !important;
+  color: var(--ap-muted) !important; letter-spacing: -0.005em !important;
+}
+
+/* ---------- Monospace outputs -------------------------------------------- */
+#report-box textarea, #trace-box textarea {
+  font-family: "SF Mono", ui-monospace, SFMono-Regular, Menlo, Consolas,
+               "Cascadia Mono", monospace !important;
+  font-size: 12.5px !important; line-height: 1.62 !important;
+  letter-spacing: -0.1px !important;
+}
+
+/* ---------- Status pill (frosted) ---------------------------------------- */
+#statusbar {
+  background: var(--ap-elevated) !important;
+  backdrop-filter: saturate(180%) blur(20px) !important;
+  -webkit-backdrop-filter: saturate(180%) blur(20px) !important;
+  border: 1px solid var(--ap-line) !important;
+  border-radius: 14px !important; padding: 12px 18px !important;
+  box-shadow: none !important;
+}
+#statusbar p {font-size: 13.5px !important; margin: 0 !important; color: var(--ap-text) !important;}
+
+/* ---------- Accordions & prose ------------------------------------------- */
+.accordion, details {
+  border-radius: 14px !important; border: 1px solid var(--ap-line) !important;
+  background: var(--ap-surface) !important;
+}
+.prose h3, .prose h4 {letter-spacing: -0.015em !important; font-weight: 600 !important;}
+.prose p, .prose li {font-size: 14.5px !important; line-height: 1.55 !important;}
+.prose code {
+  font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace !important;
+  background: var(--ap-fill) !important; border-radius: 5px !important;
+  padding: 1.5px 5px !important; font-size: 12.5px !important;
+}
+.prose a {color: var(--ap-accent) !important; text-decoration: none !important;}
+.prose a:hover {text-decoration: underline !important;}
+footer {display: none !important;}
 """
 
 with gr.Blocks(title="Chest X-Ray Report Generation + Clinical Agent", css=CSS) as demo:
     gr.Markdown(
-        "# 🩻 Chest X-Ray Report Generation + Clinical RAG Agent\n"
-        "<p>DenseNet-121 vision encoder → Transformer decoder → sectioned radiology report, "
-        "with a retrieval-augmented clinical agent that shows its reasoning.</p>",
+        "# Chest X-Ray Report Generation\n"
+        "<p>A vision encoder reads the radiograph. A transformer drafts the report. "
+        "A retrieval-augmented agent explains it — and shows its work.</p>",
         elem_id="hero",
     )
-    gr.Markdown(DISCLAIMER)
+    gr.Markdown(DISCLAIMER, elem_id="legal")
 
     with gr.Tabs():
         # ---- Tab 1: Report Generation ----
-        with gr.Tab("📄 Report Generation"):
+        with gr.Tab("Report"):
             gr.Markdown(MODEL_STATUS, elem_id="statusbar")
             gr.Markdown("Upload a chest X-ray, then click **Generate report**. "
                         "The draft is laid out in standard radiology sections and "
@@ -513,7 +652,7 @@ with gr.Blocks(title="Chest X-Ray Report Generation + Clinical Agent", css=CSS) 
                         gen_btn = gr.Button("Generate report", variant="primary",
                                             interactive=MODEL_OK, scale=3)
                         clr_btn = gr.ClearButton(value="Clear", scale=1)
-                    pdf_out = gr.File(label="⬇  Download report (PDF)")
+                    pdf_out = gr.File(label="Download report (PDF)")
                 with gr.Column(scale=3):
                     report_out = gr.Textbox(label="Structured Radiology Report", lines=21,
                                             elem_id="report-box",
@@ -526,7 +665,7 @@ with gr.Blocks(title="Chest X-Ray Report Generation + Clinical Agent", css=CSS) 
                           outputs=[report_out, raw_out, pdf_out])
 
         # ---- Tab 2: Clinical Agent ----
-        with gr.Tab("🤖 Clinical Agent"):
+        with gr.Tab("Clinical Agent"):
             gr.Markdown("Ask a clinical question. The agent **retrieves similar cases first**, "
                         "then grounds its answer in them and shows a ReAct-style trace.")
             with gr.Row(equal_height=True):
@@ -537,7 +676,7 @@ with gr.Blocks(title="Chest X-Ray Report Generation + Clinical Agent", css=CSS) 
             ask_btn = gr.Button("Ask the agent", variant="primary")
             ans_out = gr.Textbox(label="Answer", lines=5,
                                  placeholder="The grounded answer will appear here.")
-            with gr.Accordion("🧠  Reasoning trace (ReAct)", open=False):
+            with gr.Accordion("Reasoning trace (ReAct)", open=False):
                 trace_out = gr.Textbox(show_label=False, lines=16, elem_id="trace-box",
                                        container=False)
             backend_out = gr.Markdown()
@@ -552,7 +691,7 @@ with gr.Blocks(title="Chest X-Ray Report Generation + Clinical Agent", css=CSS) 
             )
 
         # ---- Tab 3: Knowledge Base ----
-        with gr.Tab("🔎 Knowledge Base"):
+        with gr.Tab("Knowledge Base"):
             gr.Markdown("Semantic search over the report corpus — this is the same "
                         "retrieval step the Clinical Agent uses internally.")
             with gr.Row(equal_height=True):
@@ -566,7 +705,7 @@ with gr.Blocks(title="Chest X-Ray Report Generation + Clinical Agent", css=CSS) 
             ksearch_btn.click(kb_search, inputs=[kq_in, kk_in],
                               outputs=[kb_table, kb_backend])
 
-            with gr.Accordion("➕  Add a report to the knowledge base", open=False):
+            with gr.Accordion("Add a report to the knowledge base", open=False):
                 with gr.Row(equal_height=True):
                     add_text = gr.Textbox(label="Report text", scale=3)
                     add_label = gr.Textbox(label="Finding label (optional)", scale=1)
@@ -577,7 +716,7 @@ with gr.Blocks(title="Chest X-Ray Report Generation + Clinical Agent", css=CSS) 
                               outputs=[add_status, kb_count])
 
         # ---- Tab 4: About ----
-        with gr.Tab("ℹ️ About"):
+        with gr.Tab("About"):
             gr.Markdown(
                 "### How it works\n"
                 "**1 · Report generation** — a DenseNet-121 encoder turns the X-ray into a "
