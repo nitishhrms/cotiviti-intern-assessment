@@ -233,18 +233,6 @@ SYNONYMS = {
 # the demo never passes curated text off as a model prediction.
 # ---------------------------------------------------------------------------
 
-def detect_finding(text: str):
-    """Return the FINDINGS_KB key mentioned in `text`, or None."""
-    low = (text or "").lower()
-    for phrase, canonical in SYNONYMS.items():
-        if phrase in low:
-            return canonical
-    for key in FINDINGS_KB:
-        if key in low:
-            return key
-    return None
-
-
 def format_report(raw: str) -> str:
     """Lay the model's single-line output out as a sectioned radiology report."""
     impression = (raw or "").strip()
