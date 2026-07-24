@@ -14,6 +14,7 @@ import os
 import json
 import math
 import re
+import tempfile
 
 import numpy as np
 import torch
@@ -157,17 +158,18 @@ transform = transforms.Compose([
 def predict_report(image):
     """Return (structured report, raw model output) for the Report Generation tab."""
     if image is None:
-        return "Please upload a chest X-ray image.", ""
+        return "Please upload a chest X-ray image.", "", None
     if not MODEL_OK:
-        return "Model weights are not available on this Space.", ""
+        return "Model weights are not available on this Space.", "", None
     if image.mode != "RGB":
         image = image.convert("RGB")
     img_tensor = transform(image).to(device)
     raw = model.generate(img_tensor, word2idx, idx2word,
                          max_len=CONFIG["max_len"], device=device)
     if not raw.strip():
-        return "(model produced an empty report; try another image)", ""
-    return format_report(raw), raw.strip()
+        return "(model produced an empty report; try another image)", "", None
+    report = format_report(raw)
+    return report, raw.strip(), report_to_pdf(report, raw.strip())
 
 
 # ============================================================================
@@ -281,6 +283,74 @@ def format_report(raw: str) -> str:
         "Educational demonstration only. Not FDA-cleared. "
         "Every draft requires radiologist review."
     )
+
+
+def report_to_pdf(report_text: str, raw: str = "") -> str:
+    """Write the structured report to a PDF and return the file path.
+
+    Uses a monospaced font so the section layout survives unchanged. Returns
+    None if reportlab is unavailable, so the tab still works without it.
+    """
+    try:
+        from reportlab.lib.pagesizes import LETTER
+        from reportlab.lib.units import inch
+        from reportlab.pdfgen import canvas
+    except ImportError:
+        return None
+
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf",
+                                      prefix="xray_report_")
+    tmp.close()
+
+    width, height = LETTER
+    c = canvas.Canvas(tmp.name, pagesize=LETTER)
+    c.setTitle("AI-Generated Chest Radiograph Report")
+
+    left, top, bottom = 0.9 * inch, height - 0.9 * inch, 0.9 * inch
+    leading = 12.5
+    y = top
+
+    c.setFillColorRGB(0.29, 0.18, 0.51)          # Cotiviti purple
+    c.setFont("Helvetica-Bold", 15)
+    c.drawString(left, y, "Chest X-Ray Report Generation")
+    y -= 16
+    c.setFont("Helvetica", 9)
+    c.setFillColorRGB(0.42, 0.42, 0.42)
+    c.drawString(left, y, "Automated draft produced by a DenseNet-121 encoder "
+                          "and Transformer decoder.")
+    y -= 8
+    c.setStrokeColorRGB(0.77, 0.0, 0.48)
+    c.setLineWidth(1.2)
+    c.line(left, y, width - left, y)
+    y -= 20
+
+    # the disclaimer is drawn as a footer below, so drop it from the body
+    body = report_text or ""
+    _disclaimer = "Educational demonstration only."
+    if _disclaimer in body:
+        body = body.split(_disclaimer)[0].rstrip()
+
+    c.setFillColorRGB(0.13, 0.13, 0.13)
+    c.setFont("Courier", 9)
+    for raw_line in body.split("\n"):
+        # wrap long lines so nothing runs off the page
+        chunks = [raw_line[i:i + 88] for i in range(0, len(raw_line), 88)] or [""]
+        for chunk in chunks:
+            if y < bottom:
+                c.showPage()
+                c.setFont("Courier", 9)
+                c.setFillColorRGB(0.13, 0.13, 0.13)
+                y = top
+            c.drawString(left, y, chunk)
+            y -= leading
+
+    c.setFont("Helvetica-Oblique", 7.5)
+    c.setFillColorRGB(0.45, 0.45, 0.45)
+    c.drawString(left, 0.6 * inch,
+                 "Educational demonstration only. Not FDA-cleared. "
+                 "Every draft requires radiologist review.")
+    c.save()
+    return tmp.name
 
 
 _STATE = {"embed": None, "backend": None, "corpus_emb": None}
@@ -438,7 +508,9 @@ with gr.Blocks(title="Chest X-Ray Report Generation + Clinical Agent",
                 with gr.Column():
                     report_out = gr.Textbox(label="Structured Radiology Report", lines=18)
                     raw_out = gr.Textbox(label="Raw model output (verbatim)", lines=2)
-            gen_btn.click(predict_report, inputs=img_in, outputs=[report_out, raw_out])
+                    pdf_out = gr.File(label="Download report (PDF)")
+            gen_btn.click(predict_report, inputs=img_in,
+                          outputs=[report_out, raw_out, pdf_out])
 
         # ---- Tab 2: Clinical Agent ----
         with gr.Tab("🤖 Clinical Agent"):
