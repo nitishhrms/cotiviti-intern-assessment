@@ -13,6 +13,7 @@ Educational / research demo only. Not FDA-cleared for clinical use.
 import os
 import json
 import math
+import re
 
 import numpy as np
 import torch
@@ -122,13 +123,27 @@ model = RadiologyReportModel(
 ).to(device)
 
 MODEL_OK = False
+MODEL_STATUS = ""
 if os.path.exists(BEST_MODEL_PATH):
-    ckpt = torch.load(BEST_MODEL_PATH, map_location=device)
-    model.load_state_dict(ckpt["model_state_dict"])
-    model.eval()
-    MODEL_OK = True
-    print("Report model loaded.")
+    try:
+        ckpt = torch.load(BEST_MODEL_PATH, map_location=device)
+        model.load_state_dict(ckpt["model_state_dict"])
+        model.eval()
+        MODEL_OK = True
+        _n_params = sum(p.numel() for p in model.parameters())
+        MODEL_STATUS = (
+            f"🟢 **Model loaded** — {_n_params/1e6:.1f}M parameters · device `{device}` · "
+            f"vocab {len(word2idx)} tokens · checkpoint epoch {ckpt.get('epoch', '?')}"
+        )
+        print("Report model loaded.")
+    except Exception as exc:
+        MODEL_STATUS = f"🔴 **Model failed to load** — {type(exc).__name__}: {exc}"
+        print("ERROR: model load failed:", exc)
 else:
+    MODEL_STATUS = (
+        f"🔴 **Model weights not found** — expected `{BEST_MODEL_PATH}`. "
+        "Report generation is disabled; the other tabs still work."
+    )
     print("WARNING: model weights not found.")
 
 transform = transforms.Compose([
@@ -140,15 +155,19 @@ transform = transforms.Compose([
 
 
 def predict_report(image):
+    """Return (structured report, raw model output) for the Report Generation tab."""
     if image is None:
-        return "Please upload a chest X-ray image."
+        return "Please upload a chest X-ray image.", ""
     if not MODEL_OK:
-        return "Model weights are not available on this Space."
+        return "Model weights are not available on this Space.", ""
     if image.mode != "RGB":
         image = image.convert("RGB")
     img_tensor = transform(image).to(device)
-    report = model.generate(img_tensor, word2idx, idx2word, max_len=CONFIG["max_len"], device=device)
-    return report if report.strip() else "(model produced an empty report; try another image)"
+    raw = model.generate(img_tensor, word2idx, idx2word,
+                         max_len=CONFIG["max_len"], device=device)
+    if not raw.strip():
+        return "(model produced an empty report; try another image)", ""
+    return format_report(raw), raw.strip()
 
 
 # ============================================================================
@@ -199,6 +218,70 @@ SYNONYMS = {
     "collapsed lung": "pneumothorax", "lung infection": "pneumonia",
     "fluid in the lungs": "edema", "collapse": "atelectasis",
 }
+
+# ---------------------------------------------------------------------------
+# Report structuring
+#
+# The vision model is a *caption* model: it was trained on the numbered
+# Impression lines of the IU X-ray corpus, so it emits one short sentence
+# (e.g. "1. no acute radiographic cardiopulmonary process.") and its vocabulary
+# contains no section headings at all. The helpers below lay that single line
+# out in standard radiology-report sections. Anything not produced by the model
+# is drawn from FINDINGS_KB and is labelled as such in the provenance block, so
+# the demo never passes curated text off as a model prediction.
+# ---------------------------------------------------------------------------
+
+def detect_finding(text: str):
+    """Return the FINDINGS_KB key mentioned in `text`, or None."""
+    low = (text or "").lower()
+    for phrase, canonical in SYNONYMS.items():
+        if phrase in low:
+            return canonical
+    for key in FINDINGS_KB:
+        if key in low:
+            return key
+    return None
+
+
+def format_report(raw: str) -> str:
+    """Lay the model's single-line output out as a sectioned radiology report."""
+    impression = (raw or "").strip()
+    # the corpus numbers its impression lines ("1. ..."); strip for re-numbering
+    body = re.sub(r"^\s*\d+\s*\.\s*", "", impression).strip()
+    body = re.sub(r"\s+\.", ".", body)            # stray " ." from the decoder
+    body = re.sub(r"\s{2,}", " ", body).strip()
+    if body and not body.endswith("."):
+        body += "."
+
+    finding = detect_finding(body)
+    if finding:
+        findings_text = FINDINGS_KB[finding]
+        findings_src = f"expanded from knowledge base (detected: {finding})"
+    else:
+        findings_text = (
+            "The model did not name a specific abnormality in its output. "
+            "No finding label matched the curated knowledge base, so no "
+            "descriptive findings paragraph is asserted here."
+        )
+        findings_src = "no finding label detected"
+
+    return (
+        "CHEST RADIOGRAPH — AI-GENERATED DRAFT\n"
+        + "=" * 58 + "\n\n"
+        "INDICATION:\n  Not provided (demonstration input).\n\n"
+        "TECHNIQUE:\n  Single frontal chest radiograph.\n\n"
+        f"FINDINGS:\n  {findings_text}\n\n"
+        f"IMPRESSION:\n  1. {body.capitalize() if body else 'No impression generated.'}\n\n"
+        + "-" * 58 + "\n"
+        "PROVENANCE\n"
+        f"  Model output (verbatim) : {impression!r}\n"
+        f"  Impression              : the model's own output, re-numbered\n"
+        f"  Findings                : {findings_src}\n"
+        "  Indication / Technique  : fixed template text, not model output\n\n"
+        "Educational demonstration only. Not FDA-cleared. "
+        "Every draft requires radiologist review."
+    )
+
 
 _STATE = {"embed": None, "backend": None, "corpus_emb": None}
 
@@ -344,14 +427,18 @@ with gr.Blocks(title="Chest X-Ray Report Generation + Clinical Agent",
     with gr.Tabs():
         # ---- Tab 1: Report Generation ----
         with gr.Tab("📄 Report Generation"):
-            gr.Markdown("Upload a chest X-ray. The vision encoder and Transformer decoder generate a draft report.")
+            gr.Markdown("Upload a chest X-ray. The vision encoder and Transformer decoder generate a draft report, "
+                        "which is then laid out in standard radiology-report sections.")
+            gr.Markdown(MODEL_STATUS)
             with gr.Row():
                 with gr.Column():
                     img_in = gr.Image(type="pil", label="Chest X-Ray (JPEG / PNG)")
-                    gen_btn = gr.Button("Generate report", variant="primary")
+                    gen_btn = gr.Button("Generate report", variant="primary",
+                                        interactive=MODEL_OK)
                 with gr.Column():
-                    report_out = gr.Textbox(label="Generated Radiology Report", lines=8)
-            gen_btn.click(predict_report, inputs=img_in, outputs=report_out)
+                    report_out = gr.Textbox(label="Structured Radiology Report", lines=18)
+                    raw_out = gr.Textbox(label="Raw model output (verbatim)", lines=2)
+            gen_btn.click(predict_report, inputs=img_in, outputs=[report_out, raw_out])
 
         # ---- Tab 2: Clinical Agent ----
         with gr.Tab("🤖 Clinical Agent"):

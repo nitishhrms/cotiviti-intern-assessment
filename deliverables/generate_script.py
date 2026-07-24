@@ -182,9 +182,9 @@ slidetag("[Tab 3: Knowledge Base - optional, ~15 sec]", "")
 line("The knowledge base tab lets me add reports and search them by meaning, not just keywords. This is "
      "the retrieval part of the RAG system.")
 
-slidetag("[Tab 4: System & Telemetry - optional, ~10 sec]", "")
-line("And finally, there's a system tab showing live health and metrics, which is the production "
-     "monitoring side.")
+slidetag("[Tab 4: About - optional, ~10 sec]", "")
+line("And the About tab explains how the system works, and includes the disclaimer that this is a "
+     "research demo, not a cleared clinical tool.")
 
 line("So in one demo, you can see the full pipeline: an image becomes a report, and the report becomes "
      "something you can ask questions about, with the answers grounded in real data.")

@@ -370,7 +370,7 @@ demo = [
     ("Report Generation", "Upload an X-ray and get a generated radiology report", MAGENTA),
     ("Clinical Agent", "Ask a clinical question, see the step-by-step reasoning and a grounded answer", PURPLE),
     ("Knowledge Base", "Add reports, search by meaning, and manage the vector store", TEAL),
-    ("System and Telemetry", "Live health, Prometheus metrics, OpenTelemetry status", RGBColor(0xE0,0x7A,0x00)),
+    ("About", "How the system works, with the educational research disclaimer", RGBColor(0xE0,0x7A,0x00)),
 ]
 y = Inches(1.8)
 for title, txt, col in demo:

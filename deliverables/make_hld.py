@@ -1,26 +1,42 @@
 """
 Render a clean High-Level Design (HLD) architecture diagram as a PNG,
 used in both the Word report and the PowerPoint deck.
+
+The wiring mirrors the real FastAPI app in backend/main.py:
+
+    tags=["system"]     /health, /metadata, /metrics      -> no service dependency
+    tags=["inference"]  /predict, /predict/dicom,
+                        /preview/dicom, /task/{task_id}   -> Inference Engine, DICOM Loader,
+                                                             Celery worker (async)
+    tags=["agent"]      /agent/query, /search,
+                        /index, /stats                    -> RAG Agent
+
+    Inference Engine -> model weights + vocab.json
+    RAG Agent        -> vector store
+    Celery worker    -> Redis (broker AND result backend, see backend/celery_app.py)
 """
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.patches import FancyBboxPatch, FancyArrowPatch
+from matplotlib.patches import FancyBboxPatch, FancyArrowPatch, Circle
 import os
 
 PURPLE = "#4B2E83"
 PURPLE_D = "#321E5A"
+PURPLE_L = "#6A4CA0"
 MAGENTA = "#C4007A"
+PLUM = "#8E2C86"
 TEAL = "#009E8F"
+TEAL_D = "#2F7D74"
 ORANGE = "#E07A00"
 SLATE = "#3F4756"
 BAND = "#F1EDFA"
-GREY = "#6B6B6B"
-LINE = "#9A8FB5"
+LINE = "#7E6FA3"
+ASYNC = "#E07A00"
 
-fig, ax = plt.subplots(figsize=(13.2, 7.1), dpi=200)
+fig, ax = plt.subplots(figsize=(13.2, 7.4), dpi=200)
 ax.set_xlim(0, 100)
-ax.set_ylim(0, 72)
+ax.set_ylim(0, 74)
 ax.axis("off")
 ax.set_aspect("auto")
 
@@ -28,82 +44,125 @@ ax.set_aspect("auto")
 def band(y, h, label, color):
     ax.add_patch(FancyBboxPatch((1, y), 98, h, boxstyle="round,pad=0.2,rounding_size=1.2",
                                 fc=BAND, ec="none", zorder=1))
-    tab = FancyBboxPatch((1.4, y + 0.6), 10.5, h - 1.2, boxstyle="round,pad=0.2,rounding_size=1.0",
-                         fc=color, ec="none", zorder=2)
-    ax.add_patch(tab)
+    ax.add_patch(FancyBboxPatch((1.4, y + 0.6), 10.5, h - 1.2,
+                                boxstyle="round,pad=0.2,rounding_size=1.0",
+                                fc=color, ec="none", zorder=2))
     ax.text(6.65, y + h / 2, label, ha="center", va="center", color="white",
-            fontsize=10.5, fontweight="bold", rotation=90 if h > 10 else 0, zorder=3)
+            fontsize=10.5, fontweight="bold", zorder=3)
 
 
 def box(x, y, w, h, title, sub=None, fc=PURPLE, tc="white", fs=11, sfs=8.5):
     ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0.2,rounding_size=1.0",
                                 fc=fc, ec="none", zorder=4))
     if sub:
-        ax.text(x + w / 2, y + h * 0.62, title, ha="center", va="center", color=tc,
+        ax.text(x + w / 2, y + h * 0.63, title, ha="center", va="center", color=tc,
                 fontsize=fs, fontweight="bold", zorder=5)
-        ax.text(x + w / 2, y + h * 0.28, sub, ha="center", va="center", color=tc,
-                fontsize=sfs, zorder=5)
+        ax.text(x + w / 2, y + h * 0.27, sub, ha="center", va="center", color=tc,
+                fontsize=sfs, zorder=5, linespacing=1.45)
     else:
         ax.text(x + w / 2, y + h / 2, title, ha="center", va="center", color=tc,
                 fontsize=fs, fontweight="bold", zorder=5)
 
 
-def arrow(x1, y1, x2, y2):
-    ax.add_patch(FancyArrowPatch((x1, y1), (x2, y2), arrowstyle="-|>", mutation_scale=16,
-                                 color=LINE, lw=2.2, zorder=3))
+def arrow(x1, y1, x2, y2, dashed=False, color=None):
+    ax.add_patch(FancyArrowPatch(
+        (x1, y1), (x2, y2), arrowstyle="-|>", mutation_scale=15,
+        color=color or (ASYNC if dashed else LINE), lw=2.0,
+        linestyle=(0, (4, 2.5)) if dashed else "solid", zorder=3))
 
 
-# Title
-ax.text(50, 70, "Chest X-Ray Report Generation:  High-Level Design",
+def step(n, x, y):
+    """Numbered badge so the diagram can be narrated in order."""
+    ax.add_patch(Circle((x, y), 1.55, fc="white", ec=LINE, lw=1.6, zorder=6))
+    ax.text(x, y, str(n), ha="center", va="center", color=PURPLE,
+            fontsize=8.5, fontweight="bold", zorder=7)
+
+
+# ---- Title + legend --------------------------------------------------------
+ax.text(50, 72.1, "Chest X-Ray Report Generation:  High-Level Design",
         ha="center", va="center", fontsize=16, fontweight="bold", color=PURPLE)
 
+ax.add_patch(FancyArrowPatch((33.5, 68.6), (37.5, 68.6), arrowstyle="-|>",
+                             mutation_scale=13, color=LINE, lw=2.0))
+ax.text(38.4, 68.6, "synchronous request path", ha="left", va="center",
+        fontsize=8.5, color="#4A4A4A")
+ax.add_patch(FancyArrowPatch((56.5, 68.6), (60.5, 68.6), arrowstyle="-|>",
+                             mutation_scale=13, color=ASYNC, lw=2.0,
+                             linestyle=(0, (4, 2.5))))
+ax.text(61.4, 68.6, "asynchronous / background path", ha="left", va="center",
+        fontsize=8.5, color="#4A4A4A")
+
 # ---- Bands -----------------------------------------------------------------
-band(58.5, 8.5, "CLIENTS", SLATE)
-band(44.5, 11.0, "API", PURPLE_D)
-band(24.0, 15.5, "SERVICES", MAGENTA)
-band(9.0, 11.0, "DATA", TEAL)
+band(58.0, 8.6, "CLIENTS", SLATE)
+band(44.0, 11.2, "API", PURPLE_D)
+band(23.5, 15.8, "SERVICES", MAGENTA)
+band(8.8, 11.2, "DATA", TEAL)
 
 # ---- Clients ---------------------------------------------------------------
-box(15, 60, 24, 5.5, "Gradio UI", "4 tabs: report · agent · KB · telemetry", fc=SLATE)
-box(41.5, 60, 24, 5.5, "Swagger / OpenAPI", "interactive API docs at /docs", fc=SLATE)
-box(68, 60, 24, 5.5, "REST / curl clients", "JSON over HTTPS", fc=SLATE)
+box(14, 59.6, 24, 5.5, "Gradio UI", "4 tabs · local + HF Space", fc=SLATE)
+box(40, 59.6, 26, 5.5, "Swagger / OpenAPI", "interactive API docs at /docs", fc=SLATE)
+box(68, 59.6, 24, 5.5, "REST / curl clients", "JSON over HTTPS", fc=SLATE)
 
 # ---- API layer -------------------------------------------------------------
-box(15, 51, 77, 3.4, "FastAPI + Uvicorn      middleware:  Request-ID  ·  Timing  ·  CORS  ·  Rate-limit",
+box(14, 50.6, 78, 3.4,
+    "FastAPI + Uvicorn      middleware:  Request-ID  ·  Timing  ·  CORS  ·  Rate-limit",
     fc=PURPLE, fs=10.5)
-box(15, 45.6, 24, 4.4, "system", "/health · /metadata · /metrics", fc="#6A4CA0", fs=10, sfs=8)
-box(41.5, 45.6, 24, 4.4, "inference", "/predict · /predict/dicom · /task", fc="#6A4CA0", fs=10, sfs=8)
-box(68, 45.6, 24, 4.4, "agent", "/agent/query · /search · /index", fc="#6A4CA0", fs=10, sfs=8)
+box(14, 45.2, 24, 4.4, "system", "/health · /metadata · /metrics",
+    fc=PURPLE_L, fs=10, sfs=8)
+box(40, 45.2, 26, 4.4, "inference", "/predict · /predict/dicom · /task",
+    fc=PURPLE_L, fs=10, sfs=8)
+box(68, 45.2, 24, 4.4, "agent", "/agent/query · /search · /index",
+    fc=PURPLE_L, fs=10, sfs=8)
 
 # ---- Services --------------------------------------------------------------
-box(15, 27, 18.5, 9.5, "Inference Engine", "DenseNet-121 encoder\n→ Transformer decoder", fc=MAGENTA, sfs=8)
-box(35.7, 27, 18.5, 9.5, "DICOM Loader", "windowing:\nlung · mediastinum · bone", fc="#8E2C86", sfs=8)
-box(56.4, 27, 18.5, 9.5, "RAG Agent", "ClinicalBERT embeds\nLangChain ReAct + LLM", fc=TEAL, sfs=8)
-box(77.1, 27, 14.9, 9.5, "Async Worker", "Celery + Redis\n(queued jobs)", fc=ORANGE, sfs=8)
+# Column order is chosen so that every arrow below runs without crossing another.
+box(14, 26.5, 17, 9.8, "Inference Engine",
+    "DenseNet-121 encoder\n→ Transformer decoder", fc=MAGENTA, fs=10.5, sfs=8)
+box(34.5, 26.5, 17, 9.8, "DICOM Loader",
+    "windowing:\nlung · mediastinum · bone", fc=PLUM, fs=10.5, sfs=8)
+box(55, 26.5, 17, 9.8, "Async Worker",
+    "Celery · results polled\nvia /task/{id}", fc=ORANGE, fs=10.5, sfs=8)
+box(75, 26.5, 17, 9.8, "RAG Agent",
+    "ClinicalBERT embeds\nLangChain ReAct + LLM", fc=TEAL, fs=10.5, sfs=8)
 
 # ---- Data ------------------------------------------------------------------
-box(15, 10.5, 24, 6, "Vector Store", "ChromaDB / FAISS", fc="#2F7D74")
-box(41.5, 10.5, 24, 6, "Model Weights", "HuggingFace Hub", fc="#2F7D74")
-box(68, 10.5, 24, 6, "Vocabulary", "vocab.json", fc="#2F7D74")
+box(14, 10.3, 17, 6.0, "Model Weights", "HuggingFace Hub", fc=TEAL_D, fs=10.5)
+box(34.5, 10.3, 17, 6.0, "Vocabulary", "vocab.json", fc=TEAL_D, fs=10.5)
+box(55, 10.3, 17, 6.0, "Redis", "Celery broker + results", fc=TEAL_D, fs=10.5, sfs=8)
+box(75, 10.3, 17, 6.0, "Vector Store", "ChromaDB / FAISS", fc=TEAL_D, fs=10.5)
 
-# ---- Arrows ----------------------------------------------------------------
-for x in (27, 53.5, 80):
-    arrow(x, 60, x, 55.0)          # clients -> api
-arrow(27, 45.6, 24, 37.0)          # api -> inference engine
-arrow(53.5, 45.6, 65, 37.0)        # api -> rag agent
-arrow(80, 45.6, 84, 37.0)          # api -> async worker
-arrow(65, 27, 68, 17.0)            # rag -> vector store
-arrow(24, 27, 27, 17.0)            # engine -> model weights (approx)
-arrow(27, 27, 50, 17.0)            # engine -> weights
+# ---- Arrows: clients -> API ------------------------------------------------
+for x in (26, 53, 80):
+    arrow(x, 59.6, x, 54.3)
+step(1, 26, 57.0)
+
+# ---- Arrows: API -> services -----------------------------------------------
+arrow(47, 45.2, 24.5, 36.8)              # inference -> Inference Engine
+arrow(52, 45.2, 43, 36.8)                # inference -> DICOM Loader
+arrow(58, 45.2, 62, 36.8, dashed=True)   # inference -> Async Worker (enqueue)
+arrow(80, 45.2, 83, 36.8)                # agent     -> RAG Agent
+step(2, 35.0, 41.2)
+step(4, 81.6, 41.2)
+
+# DICOM Loader hands the windowed tensor to the Inference Engine
+arrow(34.5, 31.4, 31.3, 31.4)
+
+# ---- Arrows: services -> data ----------------------------------------------
+arrow(21, 26.5, 21, 16.6)                # engine -> model weights
+arrow(26, 26.5, 40, 16.6)                # engine -> vocabulary
+arrow(63.5, 26.5, 63.5, 16.6, dashed=True)   # worker    -> redis
+arrow(83.5, 26.5, 83.5, 16.6)            # RAG agent -> vector store
+step(3, 21, 21.6)
+step(5, 83.5, 21.6)
 
 # ---- Cross-cutting footer --------------------------------------------------
-ax.add_patch(FancyBboxPatch((1, 1.5), 98, 5.5, boxstyle="round,pad=0.2,rounding_size=1.0",
+ax.add_patch(FancyBboxPatch((1, 1.4), 98, 5.4, boxstyle="round,pad=0.2,rounding_size=1.0",
                             fc=PURPLE, ec="none", zorder=2))
-ax.text(28, 4.25, "Observability:  Prometheus  ·  OpenTelemetry  ·  MLflow",
-        ha="center", va="center", color="white", fontsize=10, fontweight="bold")
-ax.text(50, 4.25, "|", ha="center", va="center", color="#B9A6D8", fontsize=12)
-ax.text(72, 4.25, "Delivery:  Docker  ·  Docker Compose  ·  GitHub Actions",
-        ha="center", va="center", color="white", fontsize=10, fontweight="bold")
+ax.text(4.5, 4.1, "Observability:  Prometheus  ·  OpenTelemetry  ·  MLflow",
+        ha="left", va="center", color="white", fontsize=9.5, fontweight="bold")
+ax.text(53, 4.1, "|", ha="center", va="center", color="#B9A6D8", fontsize=12)
+ax.text(95.5, 4.1, "Delivery:  Docker  ·  Docker Compose  ·  GitHub Actions",
+        ha="right", va="center", color="white", fontsize=9.5, fontweight="bold")
 
 out = os.path.join(os.path.dirname(__file__), "hld_architecture.png")
 plt.savefig(out, bbox_inches="tight", pad_inches=0.15, facecolor="white")
