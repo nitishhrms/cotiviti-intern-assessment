@@ -1,9 +1,10 @@
 torch
 torchvision
-gradio
+gradio==6.9.0
 Pillow
 numpy
 pandas
 transformers
 scikit-learn
 reportlab
+onnxruntime

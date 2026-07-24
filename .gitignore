@@ -50,3 +50,7 @@ logs/
 
 # CI workflows omitted from submission repo (token lacks workflow scope)
 .github/workflows/
+
+# ---- Pneumonia classifier weights (large, hosted on the HF Space) ----
+models/*.onnx
+models/*.onnx.data
